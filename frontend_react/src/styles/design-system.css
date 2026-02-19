@@ -1,0 +1,375 @@
+/* ═══════════════════════════════════════════════════════════════════════════════
+   SmartCopy 2.0 — Design System
+   Spacing · Elevation · Motion · Utility Tokens
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+/* ─── Spacing Scale (4px base grid) ─────────────────────────────────────────── */
+:root {
+  --space-1:  4px;
+  --space-2:  8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-6:  24px;
+  --space-8:  32px;
+  --space-12: 48px;
+  --space-16: 64px;
+
+  /* Semantic spacing */
+  --section-padding: var(--space-8);
+  --card-padding:    var(--space-4);
+  --grid-gap:        var(--space-4);
+  --btn-padding-x:   20px;
+  --btn-padding-y:   10px;
+}
+
+/* ─── Elevation System ──────────────────────────────────────────────────────── */
+:root {
+  --shadow-0: none;
+  --shadow-1: 0 1px 3px rgba(0,0,0,.12), 0 1px 2px rgba(0,0,0,.08);
+  --shadow-2: 0 4px 14px rgba(0,0,0,.18), 0 2px 6px rgba(0,0,0,.1);
+  --shadow-3: 0 12px 36px rgba(0,0,0,.28), 0 4px 12px rgba(0,0,0,.15);
+  --shadow-4: 0 20px 60px rgba(0,0,0,.4), 0 8px 20px rgba(0,0,0,.2);
+
+  --radius-sm:  6px;
+  --radius-md:  10px;
+  --radius-lg:  14px;
+  --radius-xl:  20px;
+  --radius-full: 100px;
+}
+
+/* ─── Motion Tokens ─────────────────────────────────────────────────────────── */
+:root {
+  /* ─── Premium Glassmorphism ─────────────────────────────────────────────── */
+  --glass-bg:        rgba(255, 255, 255, 0.03);
+  --glass-border:    rgba(255, 255, 255, 0.08);
+  --glass-blur:      blur(12px);
+  --glass-shadow:    0 8px 32px 0 rgba(0, 0, 0, 0.37);
+
+  --ease-out:    cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+
+  --duration-fast:   150ms;
+  --duration-normal: 250ms;
+  --duration-slow:   450ms;
+
+  --hover-transition:  all var(--duration-normal) var(--ease-out);
+  --modal-transition:  opacity var(--duration-normal) ease,
+                       transform var(--duration-normal) var(--ease-spring);
+}
+
+/* ─── Advanced Scrollbar ────────────────────────────────────────────────────── */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--text3);
+  border-radius: 10px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--text2);
+}
+
+/* ─── Glass Utility ─────────────────────────────────────────────────────────── */
+.glass {
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+}
+
+.glass-card {
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  border-radius: var(--radius-lg);
+  transition: var(--hover-transition);
+}
+.glass-card:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.15);
+  transform: translateY(-2px);
+}
+
+/* ─── Elevation Utility Classes ─────────────────────────────────────────────── */
+
+.elevation-0 { box-shadow: var(--shadow-0); }
+.elevation-1 { box-shadow: var(--shadow-1); }
+.elevation-2 { box-shadow: var(--shadow-2); }
+.elevation-3 { box-shadow: var(--shadow-3); }
+.elevation-4 { box-shadow: var(--shadow-4); }
+
+.card-elevated {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-1);
+  transition: var(--hover-transition);
+}
+.card-elevated:hover {
+  box-shadow: var(--shadow-2);
+  transform: translateY(-2px);
+}
+
+/* ─── Featured Ribbons ──────────────────────────────────────────────────────── */
+
+.ribbon {
+  position: absolute;
+  top: var(--space-2);
+  right: var(--space-2);
+  z-index: 5;
+  padding: 2px 10px;
+  border-radius: var(--radius-full);
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.ribbon-new {
+  background: rgba(62, 207, 142, 0.9);
+  color: #07070d;
+  box-shadow: 0 2px 8px rgba(62, 207, 142, 0.4);
+}
+
+.ribbon-trending {
+  background: rgba(255, 124, 77, 0.9);
+  color: #07070d;
+  box-shadow: 0 2px 8px rgba(255, 124, 77, 0.4);
+}
+
+.ribbon-4k {
+  background: rgba(167, 139, 250, 0.9);
+  color: #07070d;
+  box-shadow: 0 2px 8px rgba(167, 139, 250, 0.4);
+}
+
+.ribbon-hdr {
+  background: linear-gradient(135deg, #f0a500, #e8c547);
+  color: #07070d;
+  box-shadow: 0 2px 8px rgba(232, 197, 71, 0.4);
+}
+
+/* ─── Featured Carousel ─────────────────────────────────────────────────────── */
+
+.featured-section {
+  position: relative;
+  padding: var(--space-6) 0;
+}
+
+.featured-scroll {
+  display: flex;
+  gap: var(--space-4);
+  overflow-x: auto;
+  scroll-behavior: smooth;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: var(--space-2);
+  /* Hide scrollbar */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.featured-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.featured-card {
+  flex: 0 0 280px;
+  scroll-snap-align: start;
+  position: relative;
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: var(--hover-transition);
+}
+.featured-card:hover {
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: var(--shadow-3);
+  border-color: rgba(232, 197, 71, 0.3);
+}
+
+.featured-card-poster {
+  width: 100%;
+  aspect-ratio: 16/9;
+  background: var(--bg3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.featured-card-poster::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 60%;
+  background: linear-gradient(to top, var(--surface), transparent);
+}
+
+.featured-card-body {
+  padding: var(--space-3) var(--space-4) var(--space-4);
+  margin-top: -20px;
+  position: relative;
+  z-index: 2;
+}
+
+/* ─── Hero Banner ───────────────────────────────────────────────────────────── */
+
+.hero-banner {
+  position: relative;
+  width: 100%;
+  min-height: 180px;
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  background: linear-gradient(135deg, var(--bg3), var(--surface));
+  border: 1px solid var(--border);
+  margin-bottom: var(--space-6);
+  display: flex;
+  align-items: center;
+  padding: var(--space-8);
+}
+
+.hero-banner::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 80% 50%, rgba(232, 197, 71, 0.08), transparent 60%),
+              radial-gradient(ellipse at 20% 80%, rgba(74, 158, 255, 0.06), transparent 50%);
+  pointer-events: none;
+}
+
+.hero-content {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+}
+
+.hero-emoji {
+  position: absolute;
+  right: var(--space-8);
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 6rem;
+  opacity: 0.15;
+  user-select: none;
+  pointer-events: none;
+}
+
+/* ─── Success / Completion Animation ────────────────────────────────────────── */
+
+@keyframes successPop {
+  0%   { transform: scale(0.8); opacity: 0; }
+  50%  { transform: scale(1.05); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+.success-pop {
+  animation: successPop 0.4s var(--ease-spring) both;
+}
+
+/* ─── Sticky Bottom Action Bar (Mobile) ─────────────────────────────────────── */
+
+.sticky-action-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  background: rgba(7, 7, 13, 0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-top: 1px solid var(--border);
+  padding: var(--space-3) var(--space-4);
+  display: none;
+}
+
+@media (max-width: 640px) {
+  .sticky-action-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+  }
+}
+
+/* ─── IP Warning Badge ──────────────────────────────────────────────────────── */
+
+.ip-warning-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: var(--radius-full);
+  font-size: 0.7rem;
+  font-weight: 700;
+  background: rgba(255, 77, 109, 0.1);
+  color: var(--red);
+  border: 1px solid rgba(255, 77, 109, 0.25);
+  animation: pulseDot 2s infinite;
+}
+
+/* ─── System Health Indicator ───────────────────────────────────────────────── */
+
+.health-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-left: 6px;
+}
+.health-dot.healthy {
+  background: var(--green);
+  box-shadow: 0 0 0 0 rgba(62, 207, 142, 0.5);
+  animation: pulseDot 2s infinite;
+}
+.health-dot.degraded {
+  background: var(--orange, #ff7c4d);
+  box-shadow: 0 0 0 0 rgba(255, 124, 77, 0.5);
+  animation: pulseDot 2s infinite;
+}
+.health-dot.offline {
+  background: var(--red);
+  animation: none;
+}
+
+/* ─── Modal / Drawer panels (RTL) ───────────────────────────────────────────── */
+
+.drawer-panel-right {
+  animation: slideInFromRight var(--duration-normal) var(--ease-out);
+}
+.drawer-panel-left {
+  animation: slideInFromLeft var(--duration-normal) var(--ease-out);
+}
+@keyframes slideInFromRight {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+@keyframes slideInFromLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
