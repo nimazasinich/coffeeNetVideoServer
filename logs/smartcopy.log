@@ -1,0 +1,116 @@
+{"timestamp": "2026-02-19T04:07:20.394611+00:00", "level": "INFO", "logger": "smartcopy.database", "event": "db_initialized", "path": "C:\\Users\\Administrator\\Downloads\\videonet\\SmartCopy_Pro_v4_final\\SmartCopy_Pro_v4_fixed\\SmartCopy_Pro_v3_fixed\\data\\smartcopy.db"}
+{"timestamp": "2026-02-19T04:07:20.692604+00:00", "level": "WARNING", "logger": "smartcopy.security", "event": "default_admin_created", "note": "Change password immediately via /api/admin/change-password"}
+{"timestamp": "2026-02-19T04:07:20.731698+00:00", "level": "INFO", "logger": "smartcopy.media", "event": "media_scan_complete", "found": 1, "stale_removed": 0}
+{"timestamp": "2026-02-19T04:07:20.735620+00:00", "level": "INFO", "logger": "smartcopy.main", "event": "server_started", "media_root": "C:\\SmartCopyMedia"}
+{"timestamp": "2026-02-19T04:07:20.735620+00:00", "level": "INFO", "logger": "smartcopy.queue", "event": "queue_engine_started", "max_concurrent": 4}
+{"timestamp": "2026-02-19T04:07:20.737733+00:00", "level": "INFO", "logger": "smartcopy.usb", "event": "usb_polling_started", "interval_s": 3}
+{"timestamp": "2026-02-19T04:07:20.738820+00:00", "level": "INFO", "logger": "smartcopy.media", "event": "media_scanner_started", "interval_s": 60}
+{"timestamp": "2026-02-19T04:07:20.741645+00:00", "level": "INFO", "logger": "smartcopy.media", "event": "media_scan_complete", "found": 1, "stale_removed": 0}
+{"timestamp": "2026-02-19T04:07:26.636595+00:00", "level": "INFO", "logger": "smartcopy.database", "event": "db_initialized", "path": "C:\\Users\\Administrator\\Downloads\\videonet\\SmartCopy_Pro_v4_final\\SmartCopy_Pro_v4_fixed\\SmartCopy_Pro_v3_fixed\\data\\smartcopy.db"}
+{"timestamp": "2026-02-19T04:07:26.671597+00:00", "level": "INFO", "logger": "smartcopy.media", "event": "media_scan_complete", "found": 1, "stale_removed": 0}
+{"timestamp": "2026-02-19T04:07:26.672594+00:00", "level": "INFO", "logger": "smartcopy.main", "event": "server_started", "media_root": "C:\\SmartCopyMedia"}
+{"timestamp": "2026-02-19T04:07:26.672594+00:00", "level": "INFO", "logger": "smartcopy.queue", "event": "queue_engine_started", "max_concurrent": 4}
+{"timestamp": "2026-02-19T04:07:26.674598+00:00", "level": "INFO", "logger": "smartcopy.usb", "event": "usb_polling_started", "interval_s": 3}
+{"timestamp": "2026-02-19T04:07:26.674598+00:00", "level": "INFO", "logger": "smartcopy.media", "event": "media_scanner_started", "interval_s": 60}
+{"timestamp": "2026-02-19T04:07:26.676608+00:00", "level": "INFO", "logger": "smartcopy.media", "event": "media_scan_complete", "found": 1, "stale_removed": 0}
+{"timestamp": "2026-02-19T04:08:26.680661+00:00", "level": "INFO", "logger": "smartcopy.media", "event": "media_scan_complete", "found": 1, "stale_removed": 0}
+{"timestamp": "2026-02-19T04:09:26.685647+00:00", "level": "INFO", "logger": "smartcopy.media", "event": "media_scan_complete", "found": 1, "stale_removed": 0}
+{"timestamp": "2026-02-19T04:10:26.726597+00:00", "level": "INFO", "logger": "smartcopy.media", "event": "media_scan_complete", "found": 1, "stale_removed": 0}
+{"timestamp": "2026-02-19T04:11:26.734606+00:00", "level": "INFO", "logger": "smartcopy.media", "event": "media_scan_complete", "found": 1, "stale_removed": 0}
+{"timestamp": "2026-02-19T04:12:26.751580+00:00", "level": "INFO", "logger": "smartcopy.media", "event": "media_scan_complete", "found": 1, "stale_removed": 0}
+{"timestamp": "2026-02-19T04:13:26.761587+00:00", "level": "INFO", "logger": "smartcopy.media", "event": "media_scan_complete", "found": 1, "stale_removed": 0}
+{"timestamp": "2026-02-19T04:14:26.756576+00:00", "level": "INFO", "logger": "smartcopy.media", "event": "media_scan_complete", "found": 1, "stale_removed": 0}
+{"timestamp": "2026-02-19T04:15:26.830580+00:00", "level": "INFO", "logger": "smartcopy.media", "event": "media_scan_complete", "found": 1, "stale_removed": 0}
+{"timestamp": "2026-02-19T04:16:26.843613+00:00", "level": "INFO", "logger": "smartcopy.media", "event": "media_scan_complete", "found": 1, "stale_removed": 0}
+{"timestamp": "2026-02-19T04:17:26.863583+00:00", "level": "INFO", "logger": "smartcopy.media", "event": "media_scan_complete", "found": 1, "stale_removed": 0}
+{"timestamp": "2026-02-19T04:18:26.885601+00:00", "level": "INFO", "logger": "smartcopy.media", "event": "media_scan_complete", "found": 1, "stale_removed": 0}
+{"timestamp": "2026-02-19T04:19:26.887597+00:00", "level": "INFO", "logger": "smartcopy.media", "event": "media_scan_complete", "found": 1, "stale_removed": 0}
+{"timestamp": "2026-02-19T04:20:26.898608+00:00", "level": "INFO", "logger": "smartcopy.media", "event": "media_scan_complete", "found": 1, "stale_removed": 0}
+{"timestamp": "2026-02-19T04:21:26.886605+00:00", "level": "INFO", "logger": "smartcopy.media", "event": "media_scan_complete", "found": 1, "stale_removed": 0}
+{"timestamp": "2026-02-19T04:22:26.875594+00:00", "level": "INFO", "logger": "smartcopy.media", "event": "media_scan_complete", "found": 1, "stale_removed": 0}
+{"timestamp": "2026-02-19T04:23:26.888571+00:00", "level": "INFO", "logger": "smartcopy.media", "event": "media_scan_complete", "found": 1, "stale_removed": 0}
+{"timestamp": "2026-02-19T04:24:26.898601+00:00", "level": "INFO", "logger": "smartcopy.media", "event": "media_scan_complete", "found": 1, "stale_removed": 0}
+{"timestamp": "2026-02-19T04:25:26.884578+00:00", "level": "INFO", "logger": "smartcopy.media", "event": "media_scan_complete", "found": 1, "stale_removed": 0}
+{"timestamp": "2026-02-19T04:26:26.885593+00:00", "level": "INFO", "logger": "smartcopy.media", "event": "media_scan_complete", "found": 1, "stale_removed": 0}
+{"timestamp": "2026-02-19T04:27:26.908566+00:00", "level": "INFO", "logger": "smartcopy.media", "event": "media_scan_complete", "found": 1, "stale_removed": 0}
+{"timestamp": "2026-02-19T04:28:26.917582+00:00", "level": "INFO", "logger": "smartcopy.media", "event": "media_scan_complete", "found": 1, "stale_removed": 0}
+{"timestamp": "2026-02-19T04:29:26.913485+00:00", "level": "INFO", "logger": "smartcopy.media", "event": "media_scan_complete", "found": 1, "stale_removed": 0}
+{"timestamp": "2026-02-19T04:30:26.918487+00:00", "level": "INFO", "logger": "smartcopy.media", "event": "media_scan_complete", "found": 1, "stale_removed": 0}
+{"timestamp": "2026-02-19T04:31:26.927489+00:00", "level": "INFO", "logger": "smartcopy.media", "event": "media_scan_complete", "found": 1, "stale_removed": 0}
+{"timestamp": "2026-02-19T04:32:26.927491+00:00", "level": "INFO", "logger": "smartcopy.media", "event": "media_scan_complete", "found": 1, "stale_removed": 0}
+{"timestamp": "2026-02-19T04:33:26.931460+00:00", "level": "INFO", "logger": "smartcopy.media", "event": "media_scan_complete", "found": 1, "stale_removed": 0}
+{"timestamp": "2026-02-19T04:34:26.927500+00:00", "level": "INFO", "logger": "smartcopy.media", "event": "media_scan_complete", "found": 1, "stale_removed": 0}
+{"timestamp": "2026-02-19T04:35:26.938032+00:00", "level": "INFO", "logger": "smartcopy.media", "event": "media_scan_complete", "found": 1, "stale_removed": 0}
+{"timestamp": "2026-02-19T04:36:26.924332+00:00", "level": "INFO", "logger": "smartcopy.media", "event": "media_scan_complete", "found": 1, "stale_removed": 0}
+{"timestamp": "2026-02-19T04:37:26.935868+00:00", "level": "INFO", "logger": "smartcopy.media", "event": "media_scan_complete", "found": 1, "stale_removed": 0}
+{"timestamp": "2026-02-19T04:38:26.942908+00:00", "level": "INFO", "logger": "smartcopy.media", "event": "media_scan_complete", "found": 1, "stale_removed": 0}
+{"timestamp": "2026-02-19T04:39:26.942081+00:00", "level": "INFO", "logger": "smartcopy.media", "event": "media_scan_complete", "found": 1, "stale_removed": 0}
+{"timestamp": "2026-02-19T04:40:26.946235+00:00", "level": "INFO", "logger": "smartcopy.media", "event": "media_scan_complete", "found": 1, "stale_removed": 0}
+{"timestamp": "2026-02-19T04:41:26.939768+00:00", "level": "INFO", "logger": "smartcopy.media", "event": "media_scan_complete", "found": 1, "stale_removed": 0}
+{"timestamp": "2026-02-19T04:42:26.959702+00:00", "level": "INFO", "logger": "smartcopy.media", "event": "media_scan_complete", "found": 1, "stale_removed": 0}
+{"timestamp": "2026-02-19T04:43:26.964141+00:00", "level": "INFO", "logger": "smartcopy.media", "event": "media_scan_complete", "found": 1, "stale_removed": 0}
+{"timestamp": "2026-02-19T04:44:26.958974+00:00", "level": "INFO", "logger": "smartcopy.media", "event": "media_scan_complete", "found": 1, "stale_removed": 0}
+{"timestamp": "2026-02-19T04:45:26.966562+00:00", "level": "INFO", "logger": "smartcopy.media", "event": "media_scan_complete", "found": 1, "stale_removed": 0}
+{"timestamp": "2026-02-19T04:46:26.980954+00:00", "level": "INFO", "logger": "smartcopy.media", "event": "media_scan_complete", "found": 1, "stale_removed": 0}
+{"timestamp": "2026-02-19T04:47:26.954770+00:00", "level": "INFO", "logger": "smartcopy.media", "event": "media_scan_complete", "found": 1, "stale_removed": 0}
+{"timestamp": "2026-02-19T04:48:26.963675+00:00", "level": "INFO", "logger": "smartcopy.media", "event": "media_scan_complete", "found": 1, "stale_removed": 0}
+{"timestamp": "2026-02-19T04:49:26.966918+00:00", "level": "INFO", "logger": "smartcopy.media", "event": "media_scan_complete", "found": 1, "stale_removed": 0}
+{"timestamp": "2026-02-19T04:50:26.980671+00:00", "level": "INFO", "logger": "smartcopy.media", "event": "media_scan_complete", "found": 1, "stale_removed": 0}
+{"timestamp": "2026-02-19T04:51:26.976442+00:00", "level": "INFO", "logger": "smartcopy.media", "event": "media_scan_complete", "found": 1, "stale_removed": 0}
+{"timestamp": "2026-02-19T04:52:26.981036+00:00", "level": "INFO", "logger": "smartcopy.media", "event": "media_scan_complete", "found": 1, "stale_removed": 0}
+{"timestamp": "2026-02-19T04:53:26.982798+00:00", "level": "INFO", "logger": "smartcopy.media", "event": "media_scan_complete", "found": 1, "stale_removed": 0}
+{"timestamp": "2026-02-19T04:54:26.999855+00:00", "level": "INFO", "logger": "smartcopy.media", "event": "media_scan_complete", "found": 1, "stale_removed": 0}
+{"timestamp": "2026-02-19T04:55:27.006470+00:00", "level": "INFO", "logger": "smartcopy.media", "event": "media_scan_complete", "found": 1, "stale_removed": 0}
+{"timestamp": "2026-02-19T04:56:27.007156+00:00", "level": "INFO", "logger": "smartcopy.media", "event": "media_scan_complete", "found": 1, "stale_removed": 0}
+{"timestamp": "2026-02-19T04:57:27.007509+00:00", "level": "INFO", "logger": "smartcopy.media", "event": "media_scan_complete", "found": 1, "stale_removed": 0}
+{"timestamp": "2026-02-19T04:58:27.012093+00:00", "level": "INFO", "logger": "smartcopy.media", "event": "media_scan_complete", "found": 1, "stale_removed": 0}
+{"timestamp": "2026-02-19T04:59:27.007340+00:00", "level": "INFO", "logger": "smartcopy.media", "event": "media_scan_complete", "found": 1, "stale_removed": 0}
+{"timestamp": "2026-02-19T05:00:27.005924+00:00", "level": "INFO", "logger": "smartcopy.media", "event": "media_scan_complete", "found": 1, "stale_removed": 0}
+{"timestamp": "2026-02-19T05:01:27.029188+00:00", "level": "INFO", "logger": "smartcopy.media", "event": "media_scan_complete", "found": 1, "stale_removed": 0}
+{"timestamp": "2026-02-19T05:02:27.047149+00:00", "level": "INFO", "logger": "smartcopy.media", "event": "media_scan_complete", "found": 1, "stale_removed": 0}
+{"timestamp": "2026-02-19T05:03:27.054161+00:00", "level": "INFO", "logger": "smartcopy.media", "event": "media_scan_complete", "found": 1, "stale_removed": 0}
+{"timestamp": "2026-02-19T05:04:27.066965+00:00", "level": "INFO", "logger": "smartcopy.media", "event": "media_scan_complete", "found": 1, "stale_removed": 0}
+{"timestamp": "2026-02-19T05:05:27.051685+00:00", "level": "INFO", "logger": "smartcopy.media", "event": "media_scan_complete", "found": 1, "stale_removed": 0}
+{"timestamp": "2026-02-19T05:06:27.059547+00:00", "level": "INFO", "logger": "smartcopy.media", "event": "media_scan_complete", "found": 1, "stale_removed": 0}
+{"timestamp": "2026-02-19T05:07:27.072913+00:00", "level": "INFO", "logger": "smartcopy.media", "event": "media_scan_complete", "found": 1, "stale_removed": 0}
+{"timestamp": "2026-02-19T05:09:08.990464+00:00", "level": "INFO", "logger": "smartcopy.database", "event": "db_initialized", "path": "C:\\Users\\Administrator\\Downloads\\videonet\\SmartCopy_Pro_v4_final\\SmartCopy_Pro_v4_fixed\\SmartCopy_Pro_v3_fixed\\data\\smartcopy.db"}
+{"timestamp": "2026-02-19T05:09:09.004339+00:00", "level": "INFO", "logger": "smartcopy.media", "event": "media_scan_complete", "found": 1, "stale_removed": 0}
+{"timestamp": "2026-02-19T05:09:09.028321+00:00", "level": "INFO", "logger": "smartcopy.main", "event": "server_started", "media_root": "C:\\SmartCopyMedia"}
+{"timestamp": "2026-02-19T05:09:09.050296+00:00", "level": "INFO", "logger": "smartcopy.queue", "event": "queue_engine_started"}
+{"timestamp": "2026-02-19T05:09:09.106628+00:00", "level": "INFO", "logger": "smartcopy.usb", "event": "usb_polling_started", "interval_s": 3}
+{"timestamp": "2026-02-19T05:09:09.109951+00:00", "level": "INFO", "logger": "smartcopy.media", "event": "media_scanner_started", "interval_s": 60}
+{"timestamp": "2026-02-19T05:09:09.109951+00:00", "level": "INFO", "logger": "smartcopy.media", "event": "media_scan_complete", "found": 1, "stale_removed": 0}
+{"timestamp": "2026-02-19T05:09:16.612919+00:00", "level": "INFO", "logger": "smartcopy.websocket", "event": "ws_connected", "total": 1}
+{"timestamp": "2026-02-19T05:09:17.618271+00:00", "level": "INFO", "logger": "smartcopy.websocket", "event": "ws_connected", "total": 2}
+{"timestamp": "2026-02-19T05:09:18.617657+00:00", "level": "INFO", "logger": "smartcopy.websocket", "event": "ws_connected", "total": 3}
+{"timestamp": "2026-02-19T05:10:09.126955+00:00", "level": "INFO", "logger": "smartcopy.media", "event": "media_scan_complete", "found": 1, "stale_removed": 0}
+{"timestamp": "2026-02-19T05:11:09.128424+00:00", "level": "INFO", "logger": "smartcopy.media", "event": "media_scan_complete", "found": 1, "stale_removed": 0}
+{"timestamp": "2026-02-19T05:12:09.128538+00:00", "level": "INFO", "logger": "smartcopy.media", "event": "media_scan_complete", "found": 1, "stale_removed": 0}
+{"timestamp": "2026-02-19T05:13:05.946363+00:00", "level": "INFO", "logger": "smartcopy.websocket", "event": "ws_disconnected", "total": 2}
+{"timestamp": "2026-02-19T05:13:06.758291+00:00", "level": "INFO", "logger": "smartcopy.websocket", "event": "ws_connected", "total": 3}
+{"timestamp": "2026-02-19T05:13:09.144292+00:00", "level": "INFO", "logger": "smartcopy.media", "event": "media_scan_complete", "found": 1, "stale_removed": 0}
+{"timestamp": "2026-02-19T05:13:42.040846+00:00", "level": "INFO", "logger": "smartcopy.websocket", "event": "ws_connected", "total": 4}
+{"timestamp": "2026-02-19T05:14:09.144814+00:00", "level": "INFO", "logger": "smartcopy.media", "event": "media_scan_complete", "found": 1, "stale_removed": 0}
+{"timestamp": "2026-02-19T05:15:09.146556+00:00", "level": "INFO", "logger": "smartcopy.media", "event": "media_scan_complete", "found": 1, "stale_removed": 0}
+{"timestamp": "2026-02-19T05:16:09.160477+00:00", "level": "INFO", "logger": "smartcopy.media", "event": "media_scan_complete", "found": 1, "stale_removed": 0}
+{"timestamp": "2026-02-19T05:16:19.576192+00:00", "level": "INFO", "logger": "smartcopy.websocket", "event": "ws_disconnected", "total": 3}
+{"timestamp": "2026-02-19T05:16:19.582196+00:00", "level": "INFO", "logger": "smartcopy.websocket", "event": "ws_disconnected", "total": 2}
+{"timestamp": "2026-02-19T05:16:19.587163+00:00", "level": "INFO", "logger": "smartcopy.websocket", "event": "ws_disconnected", "total": 1}
+{"timestamp": "2026-02-19T05:16:19.603116+00:00", "level": "INFO", "logger": "smartcopy.websocket", "event": "ws_disconnected", "total": 0}
+{"timestamp": "2026-02-19T05:16:21.368506+00:00", "level": "INFO", "logger": "smartcopy.database", "event": "db_initialized", "path": "C:\\Users\\Administrator\\Downloads\\videonet\\SmartCopy_Pro_v4_final\\SmartCopy_Pro_v4_fixed\\SmartCopy_Pro_v3_fixed\\data\\smartcopy.db"}
+{"timestamp": "2026-02-19T05:16:21.377255+00:00", "level": "INFO", "logger": "smartcopy.media", "event": "media_scan_complete", "found": 1, "stale_removed": 0}
+{"timestamp": "2026-02-19T05:16:21.377255+00:00", "level": "INFO", "logger": "smartcopy.main", "event": "server_started", "media_root": "C:\\SmartCopyMedia"}
+{"timestamp": "2026-02-19T05:16:21.377255+00:00", "level": "INFO", "logger": "smartcopy.queue", "event": "queue_engine_started"}
+{"timestamp": "2026-02-19T05:16:21.392184+00:00", "level": "INFO", "logger": "smartcopy.usb", "event": "usb_polling_started", "interval_s": 3}
+{"timestamp": "2026-02-19T05:16:21.405023+00:00", "level": "INFO", "logger": "smartcopy.media", "event": "media_scanner_started", "interval_s": 60}
+{"timestamp": "2026-02-19T05:16:21.410036+00:00", "level": "INFO", "logger": "smartcopy.media", "event": "media_scan_complete", "found": 1, "stale_removed": 0}
+{"timestamp": "2026-02-19T05:16:21.621206+00:00", "level": "INFO", "logger": "smartcopy.websocket", "event": "ws_connected", "total": 1}
+{"timestamp": "2026-02-19T05:16:21.650422+00:00", "level": "INFO", "logger": "smartcopy.websocket", "event": "ws_connected", "total": 2}
+{"timestamp": "2026-02-19T05:16:21.663589+00:00", "level": "INFO", "logger": "smartcopy.websocket", "event": "ws_connected", "total": 3}
+{"timestamp": "2026-02-19T05:16:21.695347+00:00", "level": "INFO", "logger": "smartcopy.websocket", "event": "ws_connected", "total": 4}
+{"timestamp": "2026-02-19T05:17:21.420446+00:00", "level": "INFO", "logger": "smartcopy.media", "event": "media_scan_complete", "found": 1, "stale_removed": 0}
+{"timestamp": "2026-02-19T05:18:04.230932+00:00", "level": "INFO", "logger": "smartcopy.websocket", "event": "ws_disconnected", "total": 3}
+{"timestamp": "2026-02-19T05:18:04.713824+00:00", "level": "INFO", "logger": "smartcopy.websocket", "event": "ws_connected", "total": 4}
+{"timestamp": "2026-02-19T05:18:21.442822+00:00", "level": "INFO", "logger": "smartcopy.media", "event": "media_scan_complete", "found": 1, "stale_removed": 0}
+{"timestamp": "2026-02-19T05:18:32.065061+00:00", "level": "INFO", "logger": "smartcopy.websocket", "event": "ws_connected", "total": 5}
+{"timestamp": "2026-02-19T05:18:50.439181+00:00", "level": "INFO", "logger": "smartcopy.websocket", "event": "ws_connected", "total": 6}
