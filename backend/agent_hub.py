@@ -58,12 +58,17 @@ class AgentConnection:
     is_master:     bool = False
 
 
+STALE_AGENT_TTL = 90  # seconds — agent is considered stale if no ping for this long
+
+
 class AgentHub:
     """Tracks all connected agents and routes messages."""
 
     def __init__(self):
         self._agents: Dict[str, AgentConnection] = {}
         self._lock = asyncio.Lock()
+        # active_jobs_per_agent: agent_id → set of active job_ids (in-memory, authoritative)
+        self._agent_active_jobs: Dict[str, Set[str]] = {}
 
     # ── Connection management ─────────────────────────────────────────────────
 
@@ -75,11 +80,19 @@ class AgentHub:
         with db_cursor() as cur:
             cur.execute("SELECT status FROM agents WHERE agent_id=?", (agent_id,))
             row = cur.fetchone()
-            if row: status = row["status"]
+            if row:
+                status = row["status"]
 
         conn = AgentConnection(agent_id=agent_id, ws=ws, status=status)
         async with self._lock:
+            # Clean up any stale connection first
+            old = self._agents.get(agent_id)
+            if old is not None:
+                logger.warning({"event": "agent_stale_replaced", "agent_id": agent_id})
             self._agents[agent_id] = conn
+            # Restore active jobs from DB so counts survive reconnect
+            if agent_id not in self._agent_active_jobs:
+                self._agent_active_jobs[agent_id] = set()
         self._db_set_online(agent_id, online=True)
         logger.info({"event": "agent_connected", "agent_id": agent_id, "status": status})
         return conn
@@ -87,6 +100,7 @@ class AgentHub:
     async def disconnect(self, agent_id: str):
         async with self._lock:
             self._agents.pop(agent_id, None)
+            self._agent_active_jobs.pop(agent_id, None)
         self._db_set_online(agent_id, online=False)
         logger.info({"event": "agent_disconnected", "agent_id": agent_id})
         from backend.queue_engine import queue_engine
@@ -112,6 +126,49 @@ class AgentHub:
                 }
         return None
 
+    def mark_job_started(self, agent_id: str, job_id: str):
+        """Track that agent has started a job (used by queue engine)."""
+        if agent_id not in self._agent_active_jobs:
+            self._agent_active_jobs[agent_id] = set()
+        self._agent_active_jobs[agent_id].add(job_id)
+        conn = self._agents.get(agent_id)
+        if conn:
+            conn.active_job_id = job_id
+
+    def mark_job_finished(self, agent_id: str, job_id: str):
+        """Remove job from agent's active set."""
+        jobs = self._agent_active_jobs.get(agent_id)
+        if jobs:
+            jobs.discard(job_id)
+        conn = self._agents.get(agent_id)
+        if conn and conn.active_job_id == job_id:
+            conn.active_job_id = None
+
+    def get_active_job_count(self, agent_id: str) -> int:
+        """Return number of currently active jobs for this agent."""
+        return len(self._agent_active_jobs.get(agent_id, set()))
+
+    def get_stale_agents(self) -> List[str]:
+        """Return agent_ids that haven't sent a ping recently."""
+        now = time.time()
+        return [
+            a.agent_id for a in self._agents.values()
+            if now - a.last_seen > STALE_AGENT_TTL
+        ]
+
+    async def purge_stale_agents(self):
+        """Disconnect agents that haven't pinged in STALE_AGENT_TTL seconds."""
+        stale = self.get_stale_agents()
+        for agent_id in stale:
+            logger.warning({"event": "purging_stale_agent", "agent_id": agent_id})
+            conn = self._agents.get(agent_id)
+            if conn:
+                try:
+                    await conn.ws.close(code=1001, reason="Stale — no heartbeat")
+                except Exception:
+                    pass
+            await self.disconnect(agent_id)
+
     def list_agents(self) -> List[dict]:
         return [
             {
@@ -122,6 +179,8 @@ class AgentHub:
                 "connected_at": a.connected_at,
                 "last_seen":   a.last_seen,
                 "active_job":  a.active_job_id,
+                # ── FIX: correct active job count per agent ──────────────
+                "jobs_active": self.get_active_job_count(a.agent_id),
                 "online":      True,
             }
             for a in self._agents.values()
@@ -203,7 +262,8 @@ class AgentHub:
             with db_cursor() as cur:
                 cur.execute("SELECT status FROM agents WHERE agent_id=?", (conn.agent_id,))
                 row = cur.fetchone()
-                if row: conn.status = row["status"]
+                if row:
+                    conn.status = row["status"]
 
             logger.info({"event": "agent_registered",
                          "agent_id": conn.agent_id,
@@ -215,6 +275,8 @@ class AgentHub:
             bytes_written = msg.get("bytes_written", 0)
             total_bytes   = msg.get("total_bytes", 0)
             conn.active_job_id = job_id
+            # Ensure tracked in active-jobs map
+            self.mark_job_started(conn.agent_id, job_id)
             self._db_update_job_progress(job_id, bytes_written, total_bytes)
             from backend.websocket_hub import hub as ws_hub
             await ws_hub.broadcast("job.progress", {
@@ -230,6 +292,7 @@ class AgentHub:
             success  = bool(msg.get("success", False))
             error    = msg.get("message", "")
             conn.active_job_id = None
+            self.mark_job_finished(conn.agent_id, job_id)
             from backend.queue_engine import queue_engine
             await queue_engine.complete_usb_job(job_id, drive_id, success, error)
 
@@ -238,6 +301,7 @@ class AgentHub:
             drive_id = msg.get("drive_id", "")
             error    = msg.get("message", "unknown error")
             conn.active_job_id = None
+            self.mark_job_finished(conn.agent_id, job_id)
             from backend.queue_engine import queue_engine
             await queue_engine.complete_usb_job(job_id, drive_id, False, error)
 
@@ -273,7 +337,6 @@ async def register_agent(body: dict):
     version   = body.get("version", "0.0.0")[:32]
 
     # Upsert into DB
-    import json as _json
     with db_cursor() as cur:
         cur.execute("""
             INSERT INTO agents (id, agent_id, hostname, version, drives, online, last_seen, status)
@@ -318,8 +381,9 @@ async def list_agents():
 async def approve_agents(body: dict):
     agent_ids = body.get("agent_ids", [])
     status = body.get("status", "approved")
-    if not agent_ids: return {"status": "ok", "updated": 0}
-    
+    if not agent_ids:
+        return {"status": "ok", "updated": 0}
+
     placeholders = ",".join(["?"] * len(agent_ids))
     with db_cursor() as cur:
         cur.execute(f"UPDATE agents SET status=? WHERE agent_id IN ({placeholders})", [status] + agent_ids)

@@ -3,8 +3,6 @@ import hashlib
 import hmac
 import uuid
 import logging
-import base64
-from pathlib import Path
 from typing import Dict, Optional, Tuple
 from datetime import datetime
 

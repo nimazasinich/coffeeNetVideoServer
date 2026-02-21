@@ -6,7 +6,7 @@ import logging
 import json
 import shutil
 from pathlib import Path
-from typing import Optional, Tuple, Dict
+from typing import Tuple, Dict
 
 import qrcode
 from qrcode.image.styledpil import StyledPilImage
@@ -17,7 +17,7 @@ from backend.config import SERVER_PORT, SERVER_BASE_URL, ALLOWED_SUBNET
 
 logger = logging.getLogger("smartcopy.qr")
 
-STATE_FILE = Path("runtime_state.json")
+STATE_FILE = Path("data/runtime_state.json")
 
 def get_lan_ip() -> str:
     """
@@ -138,7 +138,7 @@ def detect_ip_change() -> bool:
     """
     Checks if the LAN IP has changed since the last run.
     Returns True if changed, False otherwise.
-    Updates runtime_state.json with the current IP.
+    Updates data/runtime_state.json with the current IP.
     """
     current_ip = get_lan_ip()
     state = _load_state()

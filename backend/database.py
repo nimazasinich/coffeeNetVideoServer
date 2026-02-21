@@ -7,10 +7,23 @@ FIX NOTES
 BUG-16  'dispatching' is now a valid job status (introduced by the queue engine
         race-condition fix). Added 'dispatching' to the idx_jobs_status index
         comment and made sure the check queries in init_db include it.
+
+BUG-17  poster_assets table was never created in init_db(). assets_router.py
+        does INSERT INTO poster_assets on every poster upload — raising
+        sqlite3.OperationalError: no such table: poster_assets on first use.
+        Table added below.
+
+BUG-18  media.poster_url column was absent from the initial schema, causing
+        assets_router.py's UPDATE media SET poster_url=? to fail with
+        sqlite3.OperationalError: table media has no column named poster_url.
+        Column added to the CREATE TABLE and also guarded by a migration ALTER
+        for existing databases.
+
+BUG-19  audit_logs table referenced in INTEGRATION_CHECKLIST.md but never
+        created.  Added to init_db().
 """
 import sqlite3
 import logging
-from pathlib import Path
 from contextlib import contextmanager
 from backend.config import DB_PATH, DEFAULT_PRICING
 
@@ -60,7 +73,8 @@ def init_db():
                 extension        TEXT NOT NULL,
                 is_copyable      INTEGER NOT NULL DEFAULT 1,
                 added_at         TEXT NOT NULL DEFAULT (datetime('now')),
-                checksum         TEXT
+                checksum         TEXT,
+                poster_url       TEXT
             )
         """)
 
@@ -191,16 +205,6 @@ def init_db():
             )
         """)
 
-        # Simple migrations for existing databases
-        for col_def in [
-            "ALTER TABLE agents ADD COLUMN status TEXT NOT NULL DEFAULT 'pending'",
-            "ALTER TABLE agents ADD COLUMN is_master_agent INTEGER NOT NULL DEFAULT 0",
-        ]:
-            try:
-                cur.execute(col_def)
-            except Exception:
-                pass
-
         # ── Pricing ────────────────────────────────────────────────────────
         cur.execute("""
             CREATE TABLE IF NOT EXISTS pricing (
@@ -230,6 +234,44 @@ def init_db():
             )
         """)
 
+        # ── Poster Assets ──────────────────────────────────────────────────
+        # FIX BUG-17: This table was never created, crashing every poster upload.
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS poster_assets (
+                id            TEXT PRIMARY KEY,
+                media_id      TEXT,
+                filename      TEXT NOT NULL,
+                original_name TEXT,
+                mime_type     TEXT,
+                size_bytes    INTEGER,
+                thumb_url     TEXT,
+                card_url      TEXT,
+                full_url      TEXT,
+                created_at    TEXT NOT NULL DEFAULT (datetime('now')),
+                FOREIGN KEY (media_id) REFERENCES media(id) ON DELETE SET NULL
+            )
+        """)
+
+        # ── Audit Logs ─────────────────────────────────────────────────────
+        # FIX BUG-19: Listed in INTEGRATION_CHECKLIST but never created.
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS audit_logs (
+                id          TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+                event_type  TEXT NOT NULL,
+                actor       TEXT,
+                target_id   TEXT,
+                detail      TEXT,
+                ip          TEXT,
+                created_at  REAL NOT NULL DEFAULT (unixepoch())
+            )
+        """)
+        cur.execute(
+            "CREATE INDEX IF NOT EXISTS idx_audit_created ON audit_logs(created_at DESC)"
+        )
+        cur.execute(
+            "CREATE INDEX IF NOT EXISTS idx_audit_type    ON audit_logs(event_type)"
+        )
+
         # ── Indexes ────────────────────────────────────────────────────────
         cur.execute("CREATE INDEX IF NOT EXISTS idx_jobs_status      ON jobs(status)")
         cur.execute("CREATE INDEX IF NOT EXISTS idx_jobs_drive       ON jobs(drive_id)")
@@ -237,6 +279,25 @@ def init_db():
         cur.execute("CREATE INDEX IF NOT EXISTS idx_sales_ts         ON sales(timestamp)")
         cur.execute("CREATE INDEX IF NOT EXISTS idx_dl_tokens_nonce  ON download_tokens(nonce)")
         cur.execute("CREATE INDEX IF NOT EXISTS idx_agents_agent_id  ON agents(agent_id)")
+        cur.execute(
+            "CREATE INDEX IF NOT EXISTS idx_poster_media ON poster_assets(media_id)"
+        )
+
+        # ── Additive migrations for existing databases ─────────────────────
+        # Each ALTER is wrapped so it is silently skipped on fresh installs
+        # where the column already exists from CREATE TABLE above.
+        _safe_alters = [
+            # agents table columns added in earlier patch
+            "ALTER TABLE agents ADD COLUMN status TEXT NOT NULL DEFAULT 'pending'",
+            "ALTER TABLE agents ADD COLUMN is_master_agent INTEGER NOT NULL DEFAULT 0",
+            # FIX BUG-18: poster_url was missing from media in old databases
+            "ALTER TABLE media ADD COLUMN poster_url TEXT",
+        ]
+        for alter in _safe_alters:
+            try:
+                cur.execute(alter)
+            except Exception:
+                pass  # Column already exists — expected on fresh databases
 
         # ── Seed pricing if empty ──────────────────────────────────────────
         cur.execute("SELECT COUNT(*) as cnt FROM pricing")
@@ -263,6 +324,8 @@ def recover_stale_jobs():
         rows = cur.rowcount
     if rows:
         logger.warning({"event": "stale_jobs_recovered", "count": rows})
+
+
 def get_setting(key: str, default: str = "") -> str:
     """Helper to fetch a single setting from the settings table."""
     try:
@@ -270,5 +333,26 @@ def get_setting(key: str, default: str = "") -> str:
             cur.execute("SELECT value FROM settings WHERE key=?", (key,))
             row = cur.fetchone()
             return row["value"] if row else default
-    except Exception:
+    except Exception as e:
+        logger.error({"event": "get_setting_error", "key": key, "error": str(e)})
         return default
+
+
+def write_audit_log(
+    event_type: str,
+    actor: str = None,
+    target_id: str = None,
+    detail: str = None,
+    ip: str = None,
+):
+    """Insert a row into audit_logs. Fire-and-forget; never raises."""
+    import time
+    try:
+        with db_cursor() as cur:
+            cur.execute(
+                """INSERT INTO audit_logs (id, event_type, actor, target_id, detail, ip, created_at)
+                   VALUES (lower(hex(randomblob(16))), ?, ?, ?, ?, ?, ?)""",
+                (event_type, actor, target_id, detail, ip, time.time()),
+            )
+    except Exception as e:
+        logger.warning({"event": "audit_log_write_error", "error": str(e)})

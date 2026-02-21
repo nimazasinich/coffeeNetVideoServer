@@ -27,7 +27,7 @@ import logging
 import uuid
 from typing import Dict, Optional, Set
 
-from backend.config import MAX_CONCURRENT_COPIES, MAX_QUEUE_DEPTH, MAX_RETRIES_PER_JOB
+from backend.config import MAX_CONCURRENT_COPIES, MAX_QUEUE_DEPTH
 from backend.database import db_cursor, get_setting
 from backend.websocket_hub import hub
 from backend.agent_hub import hub as agent_hub
@@ -75,7 +75,8 @@ class CopyQueueEngine:
         try:
             val = get_setting("max_copies_per_session", str(MAX_CONCURRENT_COPIES))
             return int(val)
-        except:
+        except Exception as e:
+            logger.error({"event": "get_max_concurrent_error", "error": str(e)})
             return MAX_CONCURRENT_COPIES
 
     def create_job(
@@ -155,6 +156,35 @@ class CopyQueueEngine:
     # FIX BUG-04: Atomic pick-and-mark. We pick the best candidate and immediately
     # UPDATE its status to 'dispatching' in ONE transaction. If another coroutine
     # already grabbed it (UPDATE affects 0 rows), we skip it.
+    def _check_disk_space(self, job: dict) -> Optional[str]:
+        """
+        Validate that the target drive has enough free space for this job.
+        Returns an error message string if space is insufficient, else None.
+        Called right before dispatching a local USB job.
+        """
+        drive_id = job.get("drive_id")
+        if not drive_id or ":" in drive_id:
+            # Agent drives: skip — agent will report failure if needed
+            return None
+        size_needed = job.get("size_bytes") or 0
+        if not size_needed:
+            return None
+        try:
+            import shutil as _shutil
+            from backend.config import MEDIA_ROOT as _MEDIA_ROOT
+            drive_path = job.get("drive_path")
+            if not drive_path:
+                return None
+            usage = _shutil.disk_usage(drive_path)
+            if usage.free < size_needed:
+                return (
+                    f"Insufficient disk space on drive {drive_path}: "
+                    f"need {size_needed:,} bytes, only {usage.free:,} free"
+                )
+        except Exception as e:
+            logger.warning({"event": "disk_check_error", "error": str(e)})
+        return None
+
     def _pick_and_mark_job(self) -> Optional[dict]:
         """
         Atomically select the next eligible job and mark it as 'dispatching'.
@@ -218,7 +248,21 @@ class CopyQueueEngine:
                         agent_id, drive_letter = drive_id.split(":", 1)
                         await self._dispatch_to_agent(job_id, job["media_id"], agent_id, drive_letter)
                     else:
-                        # LOCAL JOB
+                        # LOCAL JOB — check disk space at dispatch time
+                        space_err = self._check_disk_space(job)
+                        if space_err:
+                            logger.error({"event": "disk_space_insufficient",
+                                          "job_id": job_id, "error": space_err})
+                            with db_cursor() as cur:
+                                cur.execute(
+                                    "UPDATE jobs SET status='failed', error_message=? WHERE id=?",
+                                    (space_err, job_id)
+                                )
+                            await hub.broadcast("job.failed", {"job_id": job_id, "error": space_err})
+                            self._active_count -= 1
+                            await self.lock_manager.release(drive_id)
+                            return
+
                         from backend.copy_engine import execute_copy
                         with db_cursor() as cur:
                             cur.execute("UPDATE drives SET locked_by_job=? WHERE id=?", (job_id, drive_id))
@@ -268,6 +312,8 @@ class CopyQueueEngine:
 
     async def _dispatch_to_agent(self, job_id: str, media_id: str, agent_id: str, drive_id: str):
         """Send command to physical agent."""
+        # Disk-space check at dispatch time (agent drives report free_bytes=0 by default)
+        # so we skip space check for agent drives and trust the agent to fail gracefully.
         with db_cursor() as cur:
             cur.execute(
                 "UPDATE jobs SET status='active', started_at=datetime('now'), agent_id=? WHERE id=?",
@@ -281,6 +327,8 @@ class CopyQueueEngine:
             "drive_id": drive_id
         }
         await agent_hub.send_job(agent_id, payload)
+        # Track active job count per agent
+        agent_hub.mark_job_started(agent_id, job_id)
         logger.info({"event": "job_dispatched_to_agent", "job_id": job_id, "agent_id": agent_id})
 
     async def run(self):

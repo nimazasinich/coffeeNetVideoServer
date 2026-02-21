@@ -2,7 +2,6 @@
 SmartCopy Pro — QR Code Router
 Admin endpoints for QR code generation and IP change detection.
 """
-import io
 import time
 
 from fastapi import APIRouter, Depends
@@ -11,7 +10,7 @@ from fastapi.responses import Response
 from backend.security import require_admin_role
 from backend.qr import (
     generate_qr_base64, generate_high_res_qr,
-    get_lan_ip, detect_ip_change, get_ip_change_status,
+    detect_ip_change, get_ip_change_status,
 )
 
 router = APIRouter(prefix="/api/admin/qr", tags=["qr"])

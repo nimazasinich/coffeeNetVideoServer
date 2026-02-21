@@ -3,8 +3,7 @@ SmartCopy Pro — Featured Media Service
 Read-only logic to identify New and Trending content.
 """
 import logging
-from typing import List, Dict, Optional
-from datetime import datetime
+from typing import List, Dict
 from backend.database import db_cursor
 
 logger = logging.getLogger("smartcopy.featured")
