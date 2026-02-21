@@ -1,0 +1,505 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SmartCopy Pro - معماری پیشرفته سیستم</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;700&family=Vazirmatn:wght@300;400;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #050505;
+        --surface: #0f0f12;
+        --border: rgba(255, 255, 255, 0.1);
+        --accent: #22d3ee;
+        --accent-glow: rgba(34, 211, 238, 0.3);
+        --purple: #a855f7;
+        --purple-glow: rgba(168, 85, 247, 0.3);
+        --text: #ffffff;
+        --text-dim: #94a3b8;
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        background: var(--bg);
+        color: var(--text);
+        font-family: "Vazirmatn", "Outfit", sans-serif;
+        overflow-x: hidden;
+        line-height: 1.6;
+      }
+
+      .container {
+        max-width: 1100px;
+        margin: 40px auto;
+        padding: 0 20px;
+      }
+
+      header {
+        text-align: center;
+        margin-bottom: 60px;
+        animation: fadeInDown 0.8s ease-out;
+      }
+
+      h1 {
+        font-size: 2.5rem;
+        font-weight: 900;
+        background: linear-gradient(to right, #fff, var(--accent));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin-bottom: 10px;
+      }
+
+      header p {
+        color: var(--text-dim);
+        font-size: 1.1rem;
+      }
+
+      /* --- Tabs --- */
+      .tabs {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        margin-bottom: 40px;
+      }
+
+      .tab-btn {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        color: var(--text-dim);
+        padding: 12px 24px;
+        border-radius: 12px;
+        cursor: pointer;
+        font-weight: bold;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
+      .tab-btn:hover {
+        border-color: var(--accent);
+        color: var(--text);
+      }
+
+      .tab-btn.active {
+        background: var(--accent);
+        color: #000;
+        box-shadow: 0 0 20px var(--accent-glow);
+      }
+
+      /* --- Diagram Area --- */
+      .diagram-wrapper {
+        position: relative;
+        background: radial-gradient(circle at center, #16161a 0%, #050505 100%);
+        border: 1px solid var(--border);
+        border-radius: 24px;
+        padding: 60px;
+        min-height: 500px;
+        display: flex;
+        flex-direction: column;
+        gap: 50px;
+        overflow: hidden;
+      }
+
+      /* Particles effect background */
+      .diagram-wrapper::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background-image:
+          radial-gradient(
+            circle at 20% 30%,
+            rgba(34, 211, 238, 0.05) 0%,
+            transparent 40%
+          ),
+          radial-gradient(
+            circle at 80% 70%,
+            rgba(168, 85, 247, 0.05) 0%,
+            transparent 40%
+          );
+        pointer-events: none;
+      }
+
+      .node-row {
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+        position: relative;
+        z-index: 2;
+      }
+
+      /* --- Nodes --- */
+      .node {
+        background: rgba(255, 255, 255, 0.03);
+        backdrop-filter: blur(10px);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        padding: 20px;
+        text-align: center;
+        width: 220px;
+        position: relative;
+        transition: all 0.3s ease;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      }
+
+      .node:hover {
+        border-color: rgba(255, 255, 255, 0.3);
+        transform: translateY(-5px);
+      }
+
+      .node.admin {
+        border-left: 4px solid var(--purple);
+      }
+      .node.media {
+        border-left: 4px solid var(--accent);
+      }
+      .node.client {
+        border-top: 1px solid var(--border);
+        width: 140px;
+      }
+
+      .node h3 {
+        font-size: 0.9rem;
+        margin-bottom: 8px;
+        color: var(--text);
+      }
+
+      .node p {
+        font-size: 0.75rem;
+        color: var(--text-dim);
+        line-height: 1.4;
+      }
+
+      .icon-box {
+        width: 40px;
+        height: 40px;
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 10px;
+        margin: 0 auto 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .admin .icon-box {
+        color: var(--purple);
+      }
+      .media .icon-box {
+        color: var(--accent);
+      }
+
+      /* --- Connections (Animated Lines) --- */
+      .con-line {
+        position: absolute;
+        background: linear-gradient(to bottom, var(--purple), var(--accent));
+        width: 2px;
+        z-index: 1;
+        opacity: 0.3;
+      }
+
+      .pulse {
+        position: absolute;
+        width: 2px;
+        height: 40px;
+        background: linear-gradient(
+          to bottom,
+          transparent,
+          var(--accent),
+          transparent
+        );
+        animation: flowDown 2s infinite linear;
+      }
+
+      @keyframes flowDown {
+        0% {
+          top: -40px;
+          opacity: 0;
+        }
+        50% {
+          opacity: 1;
+        }
+        100% {
+          top: 100%;
+          opacity: 0;
+        }
+      }
+
+      /* --- Client Cluster --- */
+      .client-cluster {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 15px;
+        margin-top: 20px;
+      }
+
+      .agent-badge {
+        position: absolute;
+        top: -10px;
+        right: -10px;
+        background: var(--accent);
+        color: #000;
+        font-size: 0.5rem;
+        font-weight: bold;
+        padding: 2px 6px;
+        border-radius: 10px;
+        text-transform: uppercase;
+      }
+
+      .master-badge {
+        background: var(--purple);
+        color: #fff;
+      }
+
+      /* --- Mode Specific Styles --- */
+      .centralized .client .agent-badge {
+        display: none;
+      }
+      .distributed .media .agent-badge {
+        display: none;
+      }
+
+      /* --- Legend --- */
+      .legend {
+        margin-top: 40px;
+        display: flex;
+        justify-content: center;
+        gap: 30px;
+        font-size: 0.8rem;
+        color: var(--text-dim);
+      }
+
+      .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+      }
+
+      @keyframes fadeInDown {
+        from {
+          opacity: 0;
+          transform: translateY(-20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .explanation {
+        margin-top: 40px;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+      }
+
+      .exp-card {
+        background: var(--surface);
+        padding: 20px;
+        border-radius: 16px;
+        border: 1px solid var(--border);
+      }
+
+      .exp-card h4 {
+        color: var(--accent);
+        margin-bottom: 10px;
+        font-size: 1rem;
+      }
+
+      .exp-card ul {
+        list-style: none;
+        font-size: 0.85rem;
+        color: var(--text-dim);
+      }
+
+      .exp-card li::before {
+        content: "✓";
+        color: var(--accent);
+        margin-left: 8px;
+      }
+
+      footer {
+        text-align: center;
+        padding: 40px;
+        color: var(--text-dim);
+        font-size: 0.8rem;
+      }
+
+      [dir="rtl"] .node {
+        text-align: right;
+      }
+      [dir="rtl"] .agent-badge {
+        right: auto;
+        left: -10px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <h1>SmartCopy Pro v2.0</h1>
+        <p>معماری سه لایه برای مدیریت ۱۰۰+ کلاینت در مقیاس صنعتی</p>
+      </header>
+
+      <div class="tabs">
+        <button class="tab-btn active" onclick="setMode('distributed')">
+          ساختار توزیع شده (Distributed)
+        </button>
+        <button class="tab-btn" onclick="setMode('centralized')">
+          ساختار متمرکز (Centralized)
+        </button>
+      </div>
+
+      <div id="main-diagram" class="diagram-wrapper distributed">
+        <!-- Center connection line -->
+        <div
+          style="
+            position: absolute;
+            left: 50%;
+            top: 150px;
+            bottom: 150px;
+            width: 2px;
+            background: var(--border);
+            transform: translateX(-50%);
+          "
+        ></div>
+
+        <div class="node-row">
+          <div class="node admin">
+            <div class="icon-box">⚡</div>
+            <h3>Admin Server</h3>
+            <p>کنترل مرکزی، مدیریت لایسنس و پایگاه داده اصلی سیستم.</p>
+          </div>
+
+          <div class="node media">
+            <div class="icon-box">📦</div>
+            <div class="agent-badge master-badge">Master Agent</div>
+            <h3>Media Server</h3>
+            <p>مخزن اصلی محتوا و توزیع‌کننده جریان داده در شبکه محلی.</p>
+          </div>
+        </div>
+
+        <div class="node-row" style="margin-top: 20px">
+          <div
+            style="
+              background: var(--accent);
+              height: 2px;
+              width: 60%;
+              opacity: 0.3;
+            "
+          ></div>
+          <div class="pulse" style="left: 20%"></div>
+          <div class="pulse" style="left: 40%"></div>
+          <div class="pulse" style="left: 60%"></div>
+          <div class="pulse" style="left: 80%"></div>
+        </div>
+
+        <div class="client-cluster">
+          <div class="node client">
+            <div class="agent-badge">Agent 01</div>
+            <h3>Client A</h3>
+            <p>درایو: E:\</p>
+          </div>
+          <div class="node client">
+            <div class="agent-badge">Agent 02</div>
+            <h3>Client B</h3>
+            <p>درایو: F:\</p>
+          </div>
+          <div class="node client">
+            <div class="agent-badge">Agent 03</div>
+            <h3>Client C</h3>
+            <p>درایو: G:\</p>
+          </div>
+          <div class="node client">
+            <div class="agent-badge">...</div>
+            <h3>Client 100</h3>
+            <p>درایو: H:\</p>
+          </div>
+        </div>
+
+        <div class="legend">
+          <div class="legend-item">
+            <div class="dot" style="background: var(--purple)"></div>
+            فرمان (Metadata)
+          </div>
+          <div class="legend-item">
+            <div class="dot" style="background: var(--accent)"></div>
+            انتقال داده (Binary Stream)
+          </div>
+          <div class="legend-item">
+            <div
+              class="dot"
+              style="
+                background: var(--text-dim);
+                border: 1px solid var(--border);
+              "
+            ></div>
+            ارتباط غیرفعال
+          </div>
+        </div>
+      </div>
+
+      <div class="explanation">
+        <div class="exp-card">
+          <h4>لایه‌ی مدیریتی (Admin Layer)</h4>
+          <ul>
+            <li>هماهنگ‌سازی ۱۰۰+ ترمینال به صورت متمرکز</li>
+            <li>تایید هویت و پیکربندی خودکار عامل‌ها</li>
+            <li>مانیتورینگ وضعیت سلامت تمام سیستم‌ها</li>
+          </ul>
+        </div>
+        <div class="exp-card">
+          <h4>لایه‌ی محتوا (Media Layer)</h4>
+          <ul>
+            <li>توزیع هوشمند داده از نزدیک‌ترین منبع</li>
+            <li>پیکربندی Agent به عنوان Local Hub</li>
+            <li>کاهش ۹۰ درصدی بار ترافیکی سرور اصلی</li>
+          </ul>
+        </div>
+      </div>
+
+      <footer>
+        این دیاگرام به صورت پویا بر اساس تنظیمات انتخاب شده در پنل ادمین تغییر
+        می‌کند.
+      </footer>
+    </div>
+
+    <script>
+      function setMode(mode) {
+        const diagram = document.getElementById("main-diagram");
+        const buttons = document.querySelectorAll(".tab-btn");
+
+        diagram.className = "diagram-wrapper " + mode;
+
+        buttons.forEach((btn) => {
+          if (
+            btn.innerText
+              .toLowerCase()
+              .includes(mode === "distributed" ? "توزیع" : "متمرکز")
+          ) {
+            btn.classList.add("active");
+          } else {
+            btn.classList.remove("active");
+          }
+        });
+
+        // Update descriptions based on mode
+        const mediaAgent = document.querySelector(".media .master-badge");
+        if (mode === "centralized") {
+          mediaAgent.style.display = "block";
+          mediaAgent.innerText = "Busiest Agent";
+        } else {
+          mediaAgent.innerText = "Master Agent";
+        }
+      }
+    </script>
+  </body>
+</html>
