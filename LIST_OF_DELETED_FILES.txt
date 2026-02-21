@@ -1,0 +1,8 @@
+# LIST_OF_DELETED_FILES.txt
+## Files Deleted During Implementation
+
+No files were deleted — this implementation only ADDED new files and PATCHED existing ones.
+This is by design: minimal changes, visual parity, no structural removal.
+
+Files REPLACED (content fully rewritten, same path):
+- frontend_react/src/components/ModalDrawer.tsx (Overlay-based implementation)

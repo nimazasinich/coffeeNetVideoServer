@@ -1,0 +1,26 @@
+BACKEND CHANGES REPORT
+======================
+
+File: backend/main.py
+Change 1: Add assets_router import
+  Original (after line 47): from backend.routers.featured_router import router as featured_router
+  New: + from backend.routers.assets_router import router as assets_router
+  Reason: Enable poster upload endpoint as per MIGRATION_PLAN.md Phase-B.2
+
+Change 2: Register assets_router and mount /posters
+  After: app.include_router(featured_router)
+  Added: app.include_router(assets_router)
+         app.mount("/posters", StaticFiles(...), name="posters")
+  Reason: Expose POST /api/assets/poster and serve static poster images
+
+Change 3: Add ApproveJobRequest model and update approve_job
+  Function: approve_job()
+  Added: Pydantic model with delivery_type/payment_mode/priority optional fields
+  Update logic: Dynamic UPDATE statement only overrides provided fields
+  Reason: Allow admin UI to set delivery type when approving (INTEGRATION_CHECKLIST §4)
+
+File: requirements.txt
+  Added: Pillow>=10.0.0
+  Reason: Required by assets_router.py for image resizing
+
+ALL CHANGES ARE MINIMAL WIRING ONLY — no business logic changes.

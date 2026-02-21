@@ -1,0 +1,38 @@
+{
+  "_comment": "Copy this file to config.json and fill in real values. Never commit config.json to version control.",
+
+  "MEDIA_ROOT": "/mnt/media",
+  "DB_PATH": "data/smartcopy.db",
+  "FRONTEND_DIR": "frontend_react/dist",
+  "POSTERS_DIR": "public/posters",
+  "LOG_LEVEL": "INFO",
+  "LOG_FILE": "logs/smartcopy.log",
+
+  "SECRET_KEY": "CHANGE_ME_minimum_32_characters_required",
+  "JWT_EXPIRY_MINUTES": 720,
+  "AGENT_JWT_EXPIRY_MINUTES": 60,
+  "DOWNLOAD_TOKEN_TTL_SECONDS": 600,
+
+  "CORS_ORIGINS": [
+    "http://localhost:5173",
+    "http://192.168.1.100:5173"
+  ],
+
+  "TLS_CERT_FILE": "certs/server.crt",
+  "TLS_KEY_FILE": "certs/server.key",
+
+  "STRIPE_SECRET_KEY": "sk_test_REPLACE_WITH_REAL_KEY",
+  "STRIPE_PUBLISHABLE_KEY": "pk_test_REPLACE_WITH_REAL_KEY",
+  "STRIPE_WEBHOOK_SECRET": "whsec_REPLACE_WITH_REAL_SECRET",
+
+  "MAX_CONCURRENT_JOBS": 5,
+  "THROTTLE_KBPS": 0,
+  "DAILY_DOWNLOAD_QUOTA_PER_IP": 5,
+
+  "ADMIN_USERNAME": "admin",
+  "ADMIN_DEFAULT_PASSWORD": "CHANGE_ME_on_first_login",
+
+  "QR_BASE_URL": "http://192.168.1.100:8000",
+  "SHOP_NAME": "My Internet Café",
+  "CURRENCY": "USD"
+}

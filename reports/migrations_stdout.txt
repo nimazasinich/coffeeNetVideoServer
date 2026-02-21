@@ -1,0 +1,6 @@
+Base schema: OK
+  poster_url      VARCHAR(512): added
+  checksum_sha256 VARCHAR(64): added
+002 CREATE TABLE statements: OK
+media columns: ['id', 'name', 'path', 'size_bytes', 'category', 'quality_category', 'extension', 'is_copyable', 'added_at', 'checksum', 'poster_url', 'checksum_sha256']
+tables: ['media', 'drives', 'jobs', 'sales', 'payments', 'download_tokens', 'download_audit', 'agents', 'pricing', 'sqlite_sequence', 'admin_users', 'settings', 'bandwidth_policies', 'audit_logs', 'poster_assets']

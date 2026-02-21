@@ -1,0 +1,28 @@
+=======================================================
+ SmartCopy Pro — Smoke Check
+ Target: http://localhost:8000
+=======================================================
+
+[1/8] GET /api/health
+(raw) 
+
+[2/8] POST /api/admin/login
+(raw) 
+  ⚠ Could not extract token — admin endpoints will be skipped
+
+[3/8] GET /api/media
+
+[4/8] GET /api/drives
+
+[5/8] GET /api/pricing
+
+[6/8] SKIPPED — no token
+
+[7/8] SKIPPED — no token
+
+[8/8] SKIPPED — no token
+
+=======================================================
+ Smoke check complete. Review output above.
+ No assertions were made — this is not a test suite.
+=======================================================

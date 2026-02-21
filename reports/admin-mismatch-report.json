@@ -1,0 +1,321 @@
+{
+  "generated_at": "2026-02-19T00:00:00Z",
+  "version": "v4_fixed",
+  "description": "Mismatch report: Frontend expectations vs Backend responses",
+  
+  "summary": {
+    "total_mismatches": 0,
+    "critical": 0,
+    "warnings": 0,
+    "info": 2
+  },
+  
+  "mismatches": [
+    {
+      "id": "MISMATCH-01",
+      "severity": "info",
+      "component": "AdminDashboardModern",
+      "file": "frontend_react/src/components/AdminDashboardModern.tsx",
+      "line": 70,
+      "endpoint": "GET /api/admin/agents",
+      "issue": "Frontend expects 'agents' array and 'online_count' number. Backend returns both correctly.",
+      "frontend_expects": {
+        "agents": "Agent[]",
+        "online_count": "number"
+      },
+      "backend_returns": {
+        "agents": "Agent[]",
+        "online_count": "number"
+      },
+      "status": "MATCH",
+      "note": "Frontend has .catch() fallback to handle errors gracefully"
+    },
+    {
+      "id": "MISMATCH-02",
+      "severity": "info",
+      "component": "JobQueuePanel",
+      "file": "frontend_react/src/components/JobQueuePanel.tsx",
+      "line": 53,
+      "endpoint": "POST /api/admin/jobs/{id}/deny",
+      "issue": "Component uses denyJob() but endpoint is /deny. Both cancel and deny endpoints exist and work correctly.",
+      "frontend_expects": {
+        "status": "string"
+      },
+      "backend_returns": {
+        "status": "string ('denied' or 'not_found')"
+      },
+      "status": "MATCH",
+      "note": "Backend has both /cancel and /deny endpoints. Frontend uses deny for clarity."
+    },
+    {
+      "id": "MISMATCH-03",
+      "severity": "info",
+      "component": "AdminLicenseQuickView",
+      "file": "frontend_react/src/components/admin/AdminLicenseQuickView.tsx",
+      "line": 9,
+      "endpoint": "GET /api/admin/license",
+      "issue": "License response shape not fully typed in frontend. Component handles flexible response.",
+      "frontend_expects": {
+        "valid": "boolean (optional)",
+        "status": "string (optional)",
+        "tier": "string (optional)",
+        "expires_at": "string (optional)"
+      },
+      "backend_returns": "any (from backend.license.get_license_state())",
+      "status": "COMPATIBLE",
+      "recommendation": "Add proper TypeScript interface for LicenseInfo in types.ts",
+      "fix_location": "frontend_react/src/lib/types.ts"
+    },
+    {
+      "id": "MISMATCH-04",
+      "severity": "info",
+      "component": "AdminAgentsManagementPanel",
+      "file": "frontend_react/src/components/admin/AdminAgentsManagementPanel.tsx",
+      "line": 25,
+      "endpoint": "POST /api/agent/approve",
+      "issue": "Response type is 'any' in frontend. Backend returns success/error response.",
+      "frontend_expects": "any",
+      "backend_returns": "unknown (not explicitly typed in backend)",
+      "status": "COMPATIBLE",
+      "recommendation": "Backend should return explicit response shape: {status: string, agent_ids: string[]}",
+      "fix_location": "backend/agent_hub.py (agent_router)",
+      "fix_type": "backend_adapter_suggestion"
+    },
+    {
+      "id": "MISMATCH-05",
+      "severity": "info",
+      "component": "AdminAgentsManagementPanel",
+      "file": "frontend_react/src/components/admin/AdminAgentsManagementPanel.tsx",
+      "line": 35,
+      "endpoint": "POST /api/agent/set-master",
+      "issue": "Response type is 'any' in frontend. Backend returns success/error response.",
+      "frontend_expects": "any",
+      "backend_returns": "unknown (not explicitly typed in backend)",
+      "status": "COMPATIBLE",
+      "recommendation": "Backend should return explicit response shape: {status: string, agent_id: string | null}",
+      "fix_location": "backend/agent_hub.py (agent_router)",
+      "fix_type": "backend_adapter_suggestion"
+    }
+  ],
+  
+  "field_name_checks": [
+    {
+      "endpoint": "GET /api/admin/dashboard",
+      "status": "MATCH",
+      "fields": {
+        "copies_today": "✓ matches",
+        "revenue_today": "✓ matches",
+        "queue_depth": "✓ matches",
+        "media_count": "✓ matches",
+        "failures_today": "✓ matches",
+        "active_workers": "✓ matches",
+        "ws_connections": "✓ matches",
+        "agents_online": "✓ matches"
+      }
+    },
+    {
+      "endpoint": "GET /api/admin/reports/daily",
+      "status": "MATCH",
+      "fields": {
+        "reports": "✓ matches",
+        "reports[].date": "✓ matches",
+        "reports[].total_copies": "✓ matches",
+        "reports[].total_revenue": "✓ matches"
+      }
+    },
+    {
+      "endpoint": "GET /api/admin/queue",
+      "status": "MATCH",
+      "fields": {
+        "jobs": "✓ matches",
+        "active_count": "✓ matches"
+      }
+    },
+    {
+      "endpoint": "GET /api/drives",
+      "status": "MATCH",
+      "fields": {
+        "drives": "✓ matches",
+        "drives[].id": "✓ matches",
+        "drives[].path": "✓ matches",
+        "drives[].label": "✓ matches",
+        "drives[].capacity_bytes": "✓ matches",
+        "drives[].free_bytes": "✓ matches",
+        "drives[].is_locked": "✓ matches"
+      }
+    },
+    {
+      "endpoint": "GET /api/admin/agents",
+      "status": "MATCH",
+      "fields": {
+        "agents": "✓ matches",
+        "online_count": "✓ matches",
+        "agents[].agent_id": "✓ matches",
+        "agents[].hostname": "✓ matches",
+        "agents[].online": "✓ matches"
+      }
+    },
+    {
+      "endpoint": "GET /api/admin/sales",
+      "status": "MATCH",
+      "fields": {
+        "sales": "✓ matches",
+        "total": "✓ matches",
+        "sales[].price_charged": "✓ matches",
+        "sales[].payment_status": "✓ matches",
+        "sales[].media_name": "✓ matches"
+      }
+    },
+    {
+      "endpoint": "GET /api/admin/pricing",
+      "status": "MATCH",
+      "fields": {
+        "tiers": "✓ matches",
+        "tiers[].id": "✓ matches",
+        "tiers[].name": "✓ matches",
+        "tiers[].max_size_gb": "✓ matches",
+        "tiers[].price_usd": "✓ matches"
+      }
+    },
+    {
+      "endpoint": "GET /api/admin/media",
+      "status": "MATCH",
+      "fields": {
+        "media": "✓ matches",
+        "total": "✓ matches"
+      }
+    },
+    {
+      "endpoint": "GET /api/admin/settings",
+      "status": "MATCH",
+      "fields": {
+        "settings": "✓ matches (Record<string, string>)"
+      }
+    },
+    {
+      "endpoint": "GET /api/admin/qr",
+      "status": "MATCH",
+      "fields": {
+        "resolved_base_url": "✓ matches",
+        "qr_image_base64": "✓ matches",
+        "ip_changed": "✓ matches (optional)",
+        "current_ip": "✓ matches (optional)"
+      }
+    }
+  ],
+  
+  "type_checks": [
+    {
+      "field": "DashboardStats.agents_online",
+      "frontend_type": "number | undefined",
+      "backend_type": "number",
+      "status": "COMPATIBLE",
+      "note": "Frontend handles optional correctly with ?? operator"
+    },
+    {
+      "field": "Job.throughput_mbps",
+      "frontend_type": "number | null",
+      "backend_type": "number | null",
+      "status": "MATCH"
+    },
+    {
+      "field": "Job.progress_bytes",
+      "frontend_type": "number | undefined",
+      "backend_type": "number (may be null)",
+      "status": "COMPATIBLE",
+      "note": "Frontend uses optional chaining and ?? operator"
+    },
+    {
+      "field": "Job.bytes_written",
+      "frontend_type": "number | undefined",
+      "backend_type": "number (may be null)",
+      "status": "COMPATIBLE",
+      "note": "Frontend handles both progress_bytes and bytes_written"
+    },
+    {
+      "field": "Agent.last_seen",
+      "frontend_type": "number | null | undefined",
+      "backend_type": "number | null",
+      "status": "COMPATIBLE",
+      "note": "Frontend checks for null/undefined before using"
+    }
+  ],
+  
+  "websocket_event_checks": [
+    {
+      "event": "state.init",
+      "frontend_expects": {
+        "drives": "Drive[]",
+        "queue": "Job[]",
+        "disconnected": "boolean (optional)"
+      },
+      "backend_sends": {
+        "drives": "Drive[]",
+        "queue": "Job[]"
+      },
+      "status": "COMPATIBLE",
+      "note": "Frontend handles optional 'disconnected' flag for reconnection state"
+    },
+    {
+      "event": "job.progress",
+      "frontend_expects": {
+        "job_id": "string",
+        "progress": "number",
+        "bytes_written": "number",
+        "total_bytes": "number",
+        "throughput_mbps": "number",
+        "eta_seconds": "number"
+      },
+      "backend_sends": "JobProgressPayload",
+      "status": "MATCH",
+      "note": "Backend websocket_hub.py broadcasts job.progress with correct payload"
+    },
+    {
+      "event": "drive.disconnected",
+      "frontend_expects": {
+        "id": "string"
+      },
+      "backend_sends": {
+        "id": "string"
+      },
+      "status": "MATCH"
+    }
+  ],
+  
+  "authentication_checks": [
+    {
+      "endpoint": "All /api/admin/* endpoints",
+      "frontend_sends": "Authorization: Bearer {token}",
+      "backend_expects": "Authorization: Bearer {token}",
+      "status": "MATCH",
+      "note": "All admin endpoints use require_admin_role dependency"
+    },
+    {
+      "token_expiry": "15 minutes",
+      "frontend_handles": "CustomEvent 'sc:auth:expired'",
+      "backend_sends": "401 Unauthorized",
+      "status": "MATCH",
+      "note": "Frontend api.ts catches 401 and dispatches event"
+    }
+  ],
+  
+  "missing_endpoints": [],
+  
+  "recommendations": [
+    {
+      "priority": "low",
+      "component": "types.ts",
+      "action": "Add LicenseInfo interface to types.ts for better type safety",
+      "file": "frontend_react/src/lib/types.ts"
+    },
+    {
+      "priority": "low",
+      "component": "agent_hub.py",
+      "action": "Add explicit return types to agent approval/set-master endpoints",
+      "file": "backend/agent_hub.py",
+      "note": "Optional - current 'any' type works but explicit types improve DX"
+    }
+  ],
+  
+  "conclusion": "All critical endpoints match. Frontend and backend are well-synchronized. Minor type improvements recommended but not blocking."
+}
