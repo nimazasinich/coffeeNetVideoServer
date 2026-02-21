@@ -1,0 +1,71 @@
+/**
+ * SmartCopy Pro — Design System Variables
+ * Supplements the root variables in index.css.
+ * Import in main.tsx AFTER index.css to ensure overrides work.
+ */
+
+:root {
+  /* ── Semantic aliases (map to primitives defined in index.css) ── */
+  --color-primary:    var(--blue);
+  --color-secondary:  var(--cyan);
+  --color-neutral:    var(--text3);
+  --color-success:    var(--green);
+  --color-warning:    var(--amber);
+  --color-danger:     var(--red);
+  --color-surface:    var(--glass);
+  --color-backdrop:   rgba(0, 0, 0, 0.8);
+
+  /* ── Shadow scale ────────────────────────────────────────────── */
+  --shadow-sm:  var(--shadow-1);
+  --shadow-md:  var(--shadow-2);
+  --shadow-lg:  0 24px 80px rgba(0,0,0,0.7), 0 8px 24px rgba(0,0,0,0.5);
+
+  /* ── Icon size ───────────────────────────────────────────────── */
+  --icon-size-xs:  12px;
+  --icon-size-sm:  14px;
+  --icon-size-md:  16px;
+  --icon-size-lg:  20px;
+  --icon-size-xl:  24px;
+
+  /* ── Focus ring (accessibility) ──────────────────────────────── */
+  --focus-ring: 0 0 0 2px var(--blue);
+  --focus-ring-offset: 0 0 0 4px rgba(77, 159, 255, 0.25);
+}
+
+/* ── Global focus-visible ring ───────────────────────────────────── */
+:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring), var(--focus-ring-offset);
+}
+
+/* ── Skeleton animation ──────────────────────────────────────────── */
+@keyframes skeleton-pulse {
+  0%, 100% { opacity: 0.4; }
+  50%       { opacity: 0.8; }
+}
+
+/* ── Overlay enter animations ────────────────────────────────────── */
+@keyframes overlay-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes modal-slide-up {
+  from { opacity: 0; transform: translateY(24px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes drawer-slide-in {
+  from { opacity: 0; transform: translateX(100%); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes scale-in {
+  from { opacity: 0; transform: scale(0.95); }
+  to   { opacity: 1; transform: scale(1); }
+}

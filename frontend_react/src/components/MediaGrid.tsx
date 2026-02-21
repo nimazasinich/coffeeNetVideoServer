@@ -1,59 +1,65 @@
+import { useSmartCopy } from '../context/SmartCopyContext';
+import { MediaGridSkeleton } from '../ui/skeletons';
 import { MediaCard } from './MediaCard';
+import { WifiOff, Search } from 'lucide-react';
 import type { Media } from '../lib/types';
 
 interface MediaGridProps {
-  media:        Media[];
-  onSelect:     (media: Media) => void;
-  onPlay?:      (media: Media) => void;   // FIX: forwarded to MediaCard
+  onSelect:     (m: Media) => void;
   selectedIds?: Set<string>;
-  disabled?:    boolean;
+  onPlay?:      (m: Media) => void;
 }
 
-function SkeletonCard() {
-  return (
-    <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
-      <div className="skeleton" style={{ aspectRatio: '2/3' }} />
-      <div className="p-3 space-y-2">
-        <div className="skeleton h-3.5 w-full" />
-        <div className="skeleton h-3 w-2/3" />
-        <div className="skeleton h-8 w-full mt-3" />
-      </div>
-    </div>
-  );
-}
+export function MediaGrid({ onSelect, selectedIds, onPlay }: MediaGridProps) {
+  const { media, mediaLoading, serverOnline, searchQuery, selectedCategory } = useSmartCopy();
 
-export function MediaGrid({ media, onSelect, onPlay, selectedIds, disabled }: MediaGridProps) {
-  if (media.length === 0) {
+  // Apply client-side filter if context hasn't already
+  const filtered = media.filter(item => {
+    const byCategory = !selectedCategory || item.type === selectedCategory;
+    const bySearch = !searchQuery || item.name.toLowerCase().includes(searchQuery.toLowerCase());
+    return byCategory && bySearch;
+  });
+
+  if (mediaLoading) {
     return (
-      <div className="flex flex-col items-center justify-center py-24 fade-in">
-        <div className="text-6xl mb-4 opacity-40">🎬</div>
-        <p className="text-base font-semibold mb-1" style={{ color: 'var(--text2)' }}>فیلمی یافت نشد</p>
-        <p className="text-sm" style={{ color: 'var(--text3)' }}>جستجو یا فیلتر خود را تغییر دهید</p>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 12 }}
+           aria-busy="true" aria-label="Loading media library">
+        <MediaGridSkeleton count={12} />
+      </div>
+    );
+  }
+
+  if (!serverOnline) {
+    return (
+      <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--text3)' }}>
+        <WifiOff size={48} style={{ margin: '0 auto 16px', opacity: 0.3 }} />
+        <p style={{ fontSize: 14, fontWeight: 600 }}>Server Offline</p>
+        <p style={{ fontSize: 12, marginTop: 6 }}>Start the backend server to load media</p>
+      </div>
+    );
+  }
+
+  if (!filtered.length) {
+    return (
+      <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--text3)' }}>
+        <Search size={40} style={{ marginBottom: 16, color: 'var(--text3)', opacity: 0.6 }} />
+        <p style={{ fontSize: 14, fontWeight: 600 }}>No content found</p>
+        <p style={{ fontSize: 12, marginTop: 6 }}>Try changing your filters or search</p>
       </div>
     );
   }
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
-      {media.map((item, i) => (
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 12 }}>
+      {filtered.map(m => (
         <MediaCard
-          key={item.id}
-          media={item}
-          onSelect={onSelect}
+          key={m.id}
+          media={m}
+          onClick={onSelect}
           onPlay={onPlay}
-          isSelected={selectedIds?.has(item.id)}
-          disabled={disabled}
-          index={i}
+          selected={selectedIds?.has(m.id)}
         />
       ))}
-    </div>
-  );
-}
-
-export function MediaGridSkeleton() {
-  return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
-      {Array.from({ length: 12 }).map((_, i) => <SkeletonCard key={i} />)}
     </div>
   );
 }

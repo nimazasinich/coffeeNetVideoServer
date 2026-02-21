@@ -1,123 +1,96 @@
-/**
- * Load Balancer UI — Current concurrency (from settings max_copies_per_session) and slider to propose new value.
- * If backend PUT /api/admin/settings accepts key "max_copies_per_session", apply on confirm; else propose-only with explanation.
- */
 import { useState, useEffect, useCallback } from 'react';
-import { Sliders } from 'lucide-react';
+import { Sliders, CheckCircle, AlertCircle } from 'lucide-react';
 import { adminApi } from '../lib/api';
 
-const SETTINGS_KEY = 'max_copies_per_session';
-const MIN = 1;
-const MAX = 16;
+const KEY = 'max_copies_per_session';
+const MIN = 1, MAX = 16;
 
-export function LoadBalancerControl({
-  addToast,
-  settingsAvailable = true,
-}: {
+interface Props {
   addToast: (type: 'success' | 'error' | 'info', title: string, msg?: string) => void;
-  settingsAvailable?: boolean;
-}) {
-  const [current, setCurrent] = useState<number>(4);
-  const [proposed, setProposed] = useState<number>(4);
-  const [loading, setLoading] = useState(true);
+}
+
+export function LoadBalancerControl({ addToast }: Props) {
+  const [current,  setCurrent]  = useState(4);
+  const [proposed, setProposed] = useState(4);
+  const [loading,  setLoading]  = useState(true);
   const [applying, setApplying] = useState(false);
+  const [error,    setError]    = useState('');
 
   const load = useCallback(async () => {
-    if (!settingsAvailable) return;
     setLoading(true);
+    setError('');
     try {
       const res = await adminApi.settings();
-      const raw = res.settings?.[SETTINGS_KEY];
+      const raw = res.settings?.[KEY];
       const num = raw ? parseInt(raw, 10) : 4;
       const safe = Math.min(MAX, Math.max(MIN, isNaN(num) ? 4 : num));
-      setCurrent(safe);
-      setProposed(safe);
-    } catch {
-      setCurrent(4);
-      setProposed(4);
-    } finally {
-      setLoading(false);
-    }
-  }, [settingsAvailable]);
+      setCurrent(safe); setProposed(safe);
+    } catch (e) {
+      setError((e as Error).message || 'Failed to load settings');
+    } finally { setLoading(false); }
+  }, []);
 
-  useEffect(() => {
-    load();
-  }, [load]);
+  useEffect(() => { load(); }, [load]);
 
   const handleApply = useCallback(async () => {
-    if (!settingsAvailable) {
-      addToast('info', 'API موجود نیست', 'Backend API not available. To enable: PUT /api/admin/settings with key max_copies_per_session. Contact ops to apply.');
-      return;
-    }
     setApplying(true);
     try {
-      await adminApi.updateSetting(SETTINGS_KEY, String(proposed));
+      await adminApi.updateSetting(KEY, String(proposed));
       setCurrent(proposed);
-      addToast('success', 'اعمال شد', `حد همزمانی: ${proposed}`);
+      addToast('success', 'Applied', `Concurrency limit: ${proposed}`);
     } catch (e) {
-      addToast('error', 'خطا', (e as Error).message);
-    } finally {
-      setApplying(false);
-    }
-  }, [settingsAvailable, proposed, addToast]);
+      addToast('error', 'Error', (e as Error).message);
+    } finally { setApplying(false); }
+  }, [proposed, addToast]);
+
+  const pct = ((proposed - MIN) / (MAX - MIN)) * 100;
 
   if (loading) {
     return (
-      <div className="card p-4 rounded-xl">
-        <div className="skeleton h-6 w-40 mb-3" />
-        <div className="skeleton h-10 w-full rounded-lg" />
+      <div className="card" style={{ padding: '16px' }}>
+        <div className="skeleton" style={{ height: 14, width: 160, marginBottom: 12 }} />
+        <div className="skeleton" style={{ height: 5, width: '100%', borderRadius: 99 }} />
       </div>
     );
   }
 
   return (
-    <div
-      className="card p-4 rounded-xl"
-      style={{ border: '1px solid var(--border)', boxShadow: 'var(--shadow-1)' }}
-    >
-      <h3 className="font-bold text-sm flex items-center gap-2 mb-3" style={{ color: 'var(--text)' }}>
-        <Sliders className="w-4 h-4" style={{ color: 'var(--accent)' }} />
-        حد همزمانی کپی
-      </h3>
-      <div className="flex items-center gap-3 flex-wrap">
-        <div className="flex-1 min-w-[120px]">
+    <div className="card" style={{ padding: '16px' }}>
+      <div className="card-title">
+        <Sliders size={13} style={{ color: 'var(--blue)' }} />
+        Max Concurrent Copies
+      </div>
+
+      {error && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 11, color: 'var(--amber)', marginBottom: 10 }}>
+          <AlertCircle size={11} /> {error}
+        </div>
+      )}
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}>
+        <div style={{ flex: 1 }}>
           <input
-            type="range"
-            min={MIN}
-            max={MAX}
-            value={proposed}
-            onChange={(e) => setProposed(parseInt(e.target.value, 10))}
-            className="w-full h-2 rounded-full appearance-none cursor-pointer"
+            type="range" min={MIN} max={MAX} value={proposed}
+            onChange={e => setProposed(parseInt(e.target.value, 10))}
             style={{
-              background: `linear-gradient(to right, var(--accent) 0%, var(--accent) ${((proposed - MIN) / (MAX - MIN)) * 100}%, var(--bg3) ${((proposed - MIN) / (MAX - MIN)) * 100}%, var(--bg3) 100%)`,
+              width: '100%',
+              background: `linear-gradient(to right, var(--blue) 0%, var(--blue) ${pct}%, rgba(255,255,255,0.1) ${pct}%, rgba(255,255,255,0.1) 100%)`,
             }}
-            aria-label="حد همزمانی"
           />
         </div>
-        <span className="text-sm font-bold w-8" style={{ color: 'var(--text)' }}>
+        <span style={{ fontSize: 16, fontWeight: 700, fontFamily: 'DM Mono', color: 'var(--blue)', width: 26, textAlign: 'center' }}>
           {proposed}
         </span>
-        {settingsAvailable ? (
-          <button
-            type="button"
-            className="btn-primary text-xs py-2 px-3 disabled:opacity-50"
-            onClick={handleApply}
-            disabled={applying || proposed === current}
-          >
-            {applying ? '...' : 'اعمال'}
-          </button>
-        ) : (
-          <span
-            className="text-xs px-2 py-1 rounded bg-amber-500/20 text-amber-400"
-            title="Backend API missing — contact ops to apply. PUT /api/admin/settings with key max_copies_per_session."
-          >
-            فقط پیشنهاد (API ندارد)
-          </span>
-        )}
+        <button
+          className="btn-primary"
+          style={{ padding: '6px 12px', fontSize: 11 }}
+          onClick={handleApply}
+          disabled={applying || proposed === current}
+        >
+          {applying ? '...' : <><CheckCircle size={11} /> Apply</>}
+        </button>
       </div>
-      <p className="text-xs mt-2" style={{ color: 'var(--text3)' }}>
-        مقدار فعلی: {current}. حداکثر کار کپی همزمان.
-      </p>
+      <p style={{ fontSize: 10, color: 'var(--text3)' }}>Current: {current}. Maximum concurrent copy jobs.</p>
     </div>
   );
 }

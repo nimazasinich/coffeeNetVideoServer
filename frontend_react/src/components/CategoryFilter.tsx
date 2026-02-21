@@ -1,22 +1,23 @@
-interface CategoryFilterProps {
-  selected: 'all' | 'movie' | 'series';
-  onChange: (category: 'all' | 'movie' | 'series') => void;
-}
+import { useSmartCopy } from '../context/SmartCopyContext';
 
-const CATS = [
-  { value: 'all',    label: 'همه',   emoji: '🎬' },
-  { value: 'movie',  label: 'فیلم',  emoji: '🎥' },
-  { value: 'series', label: 'سریال', emoji: '📺' },
-] as const;
+const CATEGORIES = [
+  { value: '',        label: 'All' },
+  { value: 'movie',   label: 'Movie' },
+  { value: 'series',  label: 'Series' },
+];
 
-export function CategoryFilter({ selected, onChange }: CategoryFilterProps) {
+export function CategoryFilter() {
+  const { category, setCategory } = useSmartCopy();
+
   return (
-    <div className="tab-bar flex-shrink-0">
-      {CATS.map(cat => (
-        <button key={cat.value} onClick={() => onChange(cat.value)}
-                className={`tab-item ${selected === cat.value ? 'active' : ''}`}>
-          <span className="mr-1">{cat.emoji}</span>
-          {cat.label}
+    <div className="toggle-group" style={{ width: 'fit-content', flexShrink: 0 }}>
+      {CATEGORIES.map(c => (
+        <button
+          key={c.value}
+          className={`toggle-option${category === c.value ? ' active' : ''}`}
+          onClick={() => setCategory(c.value)}
+        >
+          {c.label}
         </button>
       ))}
     </div>

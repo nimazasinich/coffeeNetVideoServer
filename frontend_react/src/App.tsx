@@ -1,528 +1,426 @@
-import { useState, useMemo, useCallback, useId, useEffect } from "react";
+/**
+ * SmartCopy Pro — App Shell (Merged v4+v6)
+ * V6 visual base + V4 features: SplashScreen, dark mode, multi-select, JobQueue, MediaSelectionDrawer
+ */
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import {
-  Disc3,
-  ListOrdered,
-  ShieldCheck,
-  WifiOff,
-  Sun,
-  Moon,
-  LayoutDashboard,
-  Film,
-  ShoppingCart,
-} from "lucide-react";
-import { SmartCopyProvider, useSmartCopy } from "./contexts/SmartCopyContext";
-import { SearchBar } from "./components/SearchBar";
-import { CategoryFilter } from "./components/CategoryFilter";
-import { MediaGrid } from "./components/MediaGrid";
-import { JobQueue } from "./components/JobQueue";
-import { MediaSelectionDrawer } from "./components/MediaSelectionDrawer";
-import { AdminDashboardModern } from "./components/AdminDashboardModern";
-import { FeaturedCarousel } from "./components/FeaturedCarousel";
-import { CopyModal } from "./components/CopyModal";
-import { ToastContainer } from "./components/Toast";
-import type { ToastData, ToastType } from "./components/Toast";
-import { authApi, setAuthToken, getStoredToken } from "./lib/api";
-import type { Media, DeliveryType, PaymentMode } from "./lib/types";
+  Zap, LayoutDashboard, LogOut, LogIn, X, Lock, Eye, EyeOff, WifiOff,
+  Sun, Moon, ShoppingCart, ListOrdered, Film, Disc3, ShieldCheck, AlertTriangle,
+} from 'lucide-react';
+import { SmartCopyProvider, useSmartCopy } from './context/SmartCopyContext';
+import { ToastContainer } from './components/Toast';
+import { SearchBar } from './components/SearchBar';
+import { CategoryFilter } from './components/CategoryFilter';
+import { MediaGrid } from './components/MediaGrid';
+import { FeaturedCarousel } from './components/FeaturedCarousel';
+import { CopyModal } from './components/CopyModal';
+import { JobQueue } from './components/JobQueue';
+import { MediaSelectionDrawer } from './components/MediaSelectionDrawer';
+import { AdminDashboardModern } from './components/AdminDashboardModern';
+import { authApi, setAuthToken, getStoredToken } from './lib/api';
+import type { Media, PaymentMode, DeliveryType } from './lib/types';
 
-// ─── Dark Mode ────────────────────────────────────────────────────────────────
-
+/* ─── Dark Mode ──────────────────────────────────────────────── */
 function useDarkMode() {
   const [dark, setDark] = useState(() => {
-    const stored = localStorage.getItem("sc_theme");
-    return stored ? stored === "dark" : true;
+    const stored = localStorage.getItem('sc_theme');
+    return stored ? stored === 'dark' : true;
   });
-
   useEffect(() => {
-    document.documentElement.classList.toggle("light", !dark);
-    localStorage.setItem("sc_theme", dark ? "dark" : "light");
+    document.documentElement.classList.toggle('light', !dark);
+    localStorage.setItem('sc_theme', dark ? 'dark' : 'light');
   }, [dark]);
-
-  return { dark, toggle: () => setDark((d) => !d) };
+  return { dark, toggle: () => setDark(d => !d) };
 }
 
-// ─── Toast hook ───────────────────────────────────────────────────────────────
-
-function useToasts() {
-  const [toasts, setToasts] = useState<ToastData[]>([]);
-  const uid = useId();
-  let counter = 0;
-
-  const addToast = useCallback(
-    (type: ToastType, title: string, message?: string) => {
-      const id = `${uid}-${++counter}`;
-      setToasts((prev) => [...prev, { id, type, title, message }]);
-    },
-    [uid],
-  ); // eslint-disable-line
-
-  const dismiss = useCallback((id: string) => {
-    setToasts((prev) => prev.filter((t) => t.id !== id));
-  }, []);
-
-  return { toasts, addToast, dismiss };
+/* ─── Splash Screen ──────────────────────────────────────────── */
+function SplashScreen() {
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, zIndex: 100,
+      background: '#07070d',
+      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+    }}>
+      <div style={{ position: 'relative' }}>
+        <div style={{
+          width: 88, height: 88, borderRadius: 28,
+          background: 'linear-gradient(135deg, var(--blue2), var(--cyan))',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          boxShadow: '0 0 50px rgba(77,159,255,0.35)',
+          animation: 'pulse 2s ease-in-out infinite',
+        }}>
+          <Disc3 size={44} color="white" />
+        </div>
+      </div>
+      <h1 style={{
+        marginTop: 40, fontSize: 36, fontWeight: 900,
+        background: 'linear-gradient(135deg, var(--blue), var(--cyan))',
+        WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+        letterSpacing: '-0.03em',
+      }}>SmartCopy Pro</h1>
+      <p style={{ marginTop: 8, color: 'var(--text3)', fontSize: 10, fontWeight: 700, letterSpacing: '0.3em', textTransform: 'uppercase' }}>
+        Master Media Distribution
+      </p>
+      <div style={{ marginTop: 32, width: 160, height: 3, background: 'rgba(255,255,255,0.06)', borderRadius: 99, overflow: 'hidden' }}>
+        <div style={{
+          height: '100%', background: 'linear-gradient(90deg,var(--blue),var(--cyan))',
+          animation: 'progressFast 2.2s ease forwards',
+        }} />
+      </div>
+      <style>{`
+        @keyframes progressFast { from { width: 0 } to { width: 100% } }
+        @keyframes pulse { 0%,100% { box-shadow: 0 0 50px rgba(77,159,255,.35) } 50% { box-shadow: 0 0 80px rgba(77,159,255,.6) } }
+      `}</style>
+    </div>
+  );
 }
 
-// ─── Login Screen ─────────────────────────────────────────────────────────────
+/* ─── Login Modal ────────────────────────────────────────────── */
+function LoginModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
+  const { addToast } = useSmartCopy();
+  const [user,    setUser]    = useState('');
+  const [pass,    setPass]    = useState('');
+  const [show,    setShow]    = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error,   setError]   = useState('');
 
-function LoginScreen({ onLogin }: { onLogin: () => void }) {
-  const [user, setUser] = useState("");
-  const [pass, setPass] = useState("");
-  const [err, setErr] = useState("");
-  const [busy, setBusy] = useState(false);
-
-  const submit = async () => {
-    if (!user || !pass) return;
-    setBusy(true);
-    setErr("");
+  const handleLogin = async () => {
+    if (!user || !pass) { setError('Enter username and password'); return; }
+    setLoading(true); setError('');
     try {
       const res = await authApi.login(user, pass);
       setAuthToken(res.access_token);
-      onLogin();
+      addToast('success', 'Login Successful', 'Welcome to Admin Panel');
+      onSuccess();
+      onClose();
     } catch (e) {
-      setErr((e as Error).message);
-    } finally {
-      setBusy(false);
-    }
+      setError((e as Error).message || 'Invalid credentials');
+    } finally { setLoading(false); }
   };
 
   return (
-    <div
-      className="min-h-screen flex items-center justify-center p-4"
-      style={{ background: "var(--bg)" }}
-    >
-      <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        <div
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 rounded-full opacity-10"
-          style={{
-            background: "radial-gradient(circle, var(--accent), transparent)",
-          }}
-        />
-      </div>
-
-      <div
-        className="w-full max-w-sm card-elevated p-8 scale-in"
-        style={{ background: "var(--surface)" }}
-      >
-        <div className="text-center mb-8">
-          <div
-            className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg"
-            style={{
-              background:
-                "linear-gradient(135deg, var(--accent), var(--accent2))",
-            }}
-          >
-            <Disc3 className="w-8 h-8" style={{ color: "#07070d" }} />
-          </div>
-          <h1 className="text-2xl font-black brand-text">SmartCopy</h1>
-          <p className="text-sm mt-1" style={{ color: "var(--text3)" }}>
-            سیستم مدیریت کپی رسانه
-          </p>
-        </div>
-
-        {err && (
-          <div
-            className="mb-4 p-3 rounded-xl text-sm fade-in"
-            style={{
-              background: "rgba(255,77,109,.1)",
-              border: "1px solid rgba(255,77,109,.25)",
-              color: "var(--red)",
-            }}
-          >
-            {err}
-          </div>
-        )}
-
-        <div className="space-y-4">
-          <div>
-            <label
-              className="block text-xs font-bold mb-1.5 uppercase tracking-wider"
-              style={{ color: "var(--text2)" }}
-            >
-              نام کاربری
-            </label>
-            <input
-              className="input-field"
-              type="text"
-              value={user}
-              placeholder="admin"
-              autoComplete="username"
-              onChange={(e) => setUser(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && submit()}
-            />
+    <div style={{
+      position: 'fixed', inset: 0, zIndex: 600,
+      background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(12px)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20,
+    }} onClick={e => e.target === e.currentTarget && onClose()}>
+      <div style={{
+        width: '100%', maxWidth: 380,
+        background: 'var(--bg2)', border: '1px solid var(--border2)',
+        borderRadius: 'var(--r-xl)', overflow: 'hidden', boxShadow: 'var(--shadow-2)',
+        animation: 'scaleIn 0.25s ease',
+      }}>
+        <div style={{ padding: '24px 24px 20px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{
+            width: 42, height: 42, borderRadius: 11,
+            background: 'linear-gradient(135deg,var(--blue2),var(--cyan))',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            boxShadow: '0 0 20px var(--blue-glow)',
+          }}>
+            <Lock size={18} color="white" />
           </div>
           <div>
-            <label
-              className="block text-xs font-bold mb-1.5 uppercase tracking-wider"
-              style={{ color: "var(--text2)" }}
-            >
-              رمز عبور
-            </label>
-            <input
-              className="input-field"
-              type="password"
-              value={pass}
-              placeholder="••••••••"
-              autoComplete="current-password"
-              onChange={(e) => setPass(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && submit()}
-            />
+            <h2 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text1)' }}>Admin Login</h2>
+            <p style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>SmartCopy Pro</p>
           </div>
-          <button
-            onClick={submit}
-            disabled={busy || !user || !pass}
-            className="btn-primary w-full py-3 text-base"
-          >
-            {busy ? (
-              <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-            ) : (
-              <ShieldCheck className="w-4 h-4" />
-            )}
-            ورود به پنل
+          <button className="btn-icon" onClick={onClose} style={{ marginLeft: 'auto', width: 30, height: 30 }}>
+            <X size={14} />
           </button>
+        </div>
+        <div style={{ padding: '20px 24px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <div>
+              <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: 'var(--text2)', marginBottom: 6 }}>Username</label>
+              <input className="input-field" type="text" placeholder="admin" value={user}
+                onChange={e => setUser(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleLogin()} />
+            </div>
+            <div>
+              <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: 'var(--text2)', marginBottom: 6 }}>Password</label>
+              <div style={{ position: 'relative' }}>
+                <input className="input-field" type={show ? 'text' : 'password'} placeholder="••••••••"
+                  value={pass} onChange={e => setPass(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && handleLogin()} style={{ paddingRight: 36 }} />
+                <button style={{
+                  position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)',
+                  background: 'none', border: 'none', color: 'var(--text3)', cursor: 'pointer', display: 'flex', padding: 2,
+                }} onClick={() => setShow(s => !s)}>
+                  {show ? <EyeOff size={14} /> : <Eye size={14} />}
+                </button>
+              </div>
+            </div>
+            {error && (
+              <p style={{ fontSize: 11, color: 'var(--red)', padding: '8px 10px', background: 'var(--red-dim)', borderRadius: 'var(--r-sm)' }}>
+                {error}
+              </p>
+            )}
+            <button className="btn-primary" style={{ width: '100%', padding: '12px', marginTop: 4 }}
+              onClick={handleLogin} disabled={loading}>
+              {loading
+                ? <span style={{ display: 'inline-block', width: 14, height: 14, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: 'white', borderRadius: '50%', animation: 'spin 0.6s linear infinite' }} />
+                : <LogIn size={14} />}
+              Login
+            </button>
+          </div>
         </div>
       </div>
     </div>
   );
 }
 
-// ─── Customer App ─────────────────────────────────────────────────────────────
+/* ─── Offline Banner ─────────────────────────────────────────── */
+function OfflineBanner() {
+  const { serverOnline } = useSmartCopy();
+  if (serverOnline) return null;
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'center', gap: 8, padding: '8px 20px',
+      background: 'rgba(255,85,119,0.1)', borderBottom: '1px solid rgba(255,85,119,0.25)',
+      fontSize: 11, color: 'var(--red)',
+    }}>
+      <WifiOff size={12} />
+      Server offline — start the backend at{' '}
+      <code style={{ fontFamily: 'DM Mono', background: 'rgba(255,85,119,0.15)', padding: '1px 5px', borderRadius: 4 }}>
+        http://localhost:8000
+      </code>
+    </div>
+  );
+}
 
+/* ─── Customer App ───────────────────────────────────────────── */
 function CustomerApp({
-  onAdminClick,
-  addToast,
-  dark,
-  toggleDark,
+  onAdminClick, dark, toggleDark,
 }: {
-  onAdminClick: () => void;
-  addToast: (type: ToastType, title: string, msg?: string) => void;
-  dark: boolean;
-  toggleDark: () => void;
+  onAdminClick: () => void; dark: boolean; toggleDark: () => void;
 }) {
   const {
-    media,
-    drives,
-    jobsList,
-    pricingTiers,
-    selectedCategory,
-    searchQuery,
-    loading,
-    error,
-    wsConnected,
-    activeJobCount,
-    setCategory,
-    setSearchQuery,
-    createJob,
-    cancelJob,
+    media, drives, pricingTiers, loading, error, wsConnected, addToast,
+    selectedCategory, searchQuery, setCategory, setSearchQuery,
+    jobsList, activeJobCount, createJob, cancelJob,
   } = useSmartCopy();
 
   const [selectedMediaItems, setSelectedMediaItems] = useState<Media[]>([]);
-  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const [showQueue, setShowQueue] = useState(false);
-  // FIX: CopyModal state for single-item copy (play button)
+  const [isDrawerOpen,  setIsDrawerOpen ] = useState(false);
+  const [showQueue,     setShowQueue    ] = useState(false);
   const [copyModalMedia, setCopyModalMedia] = useState<Media | null>(null);
 
-  const selectedIds = useMemo(
-    () => new Set(selectedMediaItems.map((m) => m.id)),
-    [selectedMediaItems],
-  );
+  const selectedIds = useMemo(() => new Set(selectedMediaItems.map(m => m.id)), [selectedMediaItems]);
 
-  const toggleSelection = (m: Media) => {
-    setSelectedMediaItems((prev) => {
-      const exists = prev.find((x) => x.id === m.id);
-      if (exists) return prev.filter((x) => x.id !== m.id);
-      return [...prev, m];
-    });
-  };
+  const toggleSelection = useCallback((m: Media) => {
+    setSelectedMediaItems(prev => prev.find(x => x.id === m.id) ? prev.filter(x => x.id !== m.id) : [...prev, m]);
+  }, []);
 
-  const removeMedia = (id: string) => {
-    setSelectedMediaItems((prev) => prev.filter((x) => x.id !== id));
-  };
-
-  const filtered = useMemo(
-    () =>
-      media.filter((item) => {
-        const byCategory =
-          selectedCategory === "all" || item.type === selectedCategory;
-        const bySearch = item.name
-          .toLowerCase()
-          .includes(searchQuery.toLowerCase());
-        return byCategory && bySearch;
-      }),
-    [media, selectedCategory, searchQuery],
-  );
+  const filtered = useMemo(() => media.filter(item => {
+    const byCategory = selectedCategory === 'all' || item.type === selectedCategory;
+    const bySearch = item.name.toLowerCase().includes(searchQuery.toLowerCase());
+    return byCategory && bySearch;
+  }), [media, selectedCategory, searchQuery]);
 
   const mediaMap = useMemo(() => {
     const m = new Map<string, string>();
-    media.forEach((item) => m.set(item.id, item.name));
+    media.forEach(item => m.set(item.id, item.name));
     return m;
   }, [media]);
 
-  // FIX: Updated signature to include deliveryType
-  const handleBatchRequest = async (
-    driveId: string | null,
-    paymentMode: PaymentMode,
-    deliveryType: DeliveryType,
-  ) => {
-    if (selectedMediaItems.length === 0) return;
+  const handleBatchRequest = async (driveId: string | null, paymentMode: PaymentMode, deliveryType: DeliveryType) => {
+    if (!selectedMediaItems.length) return;
     try {
-      for (const mediaItem of selectedMediaItems) {
-        await createJob(mediaItem.id, driveId, deliveryType, paymentMode);
-      }
+      for (const item of selectedMediaItems) await createJob(item.id, driveId, deliveryType, paymentMode);
       setIsDrawerOpen(false);
       setSelectedMediaItems([]);
       setShowQueue(true);
-      addToast(
-        "success",
-        "درخواست‌ها ثبت شد",
-        paymentMode === "manual"
-          ? "به میز مدیریت مراجعه کنید."
-          : `${selectedMediaItems.length} فیلم در صف قرار گرفت`,
-      );
+      addToast('success', 'Requests submitted', `${selectedMediaItems.length} items queued`);
     } catch (err) {
-      addToast("error", "خطا در ثبت درخواست", (err as Error).message);
-    }
-  };
-
-  // FIX: Single-item copy via CopyModal (play button)
-  const handleSingleCopy = async (
-    driveId: string | null,
-    deliveryType: DeliveryType,
-    paymentMode: PaymentMode,
-    _amountCents?: number,
-  ) => {
-    if (!copyModalMedia) return;
-    try {
-      await createJob(copyModalMedia.id, driveId, deliveryType, paymentMode);
-      setCopyModalMedia(null);
-      setShowQueue(true);
-      addToast("success", "درخواست ثبت شد", copyModalMedia.name);
-    } catch (err) {
-      addToast("error", "خطا", (err as Error).message);
-      setCopyModalMedia(null);
+      addToast('error', 'Request error', (err as Error).message);
     }
   };
 
   const handleCancelJob = async (jobId: string) => {
-    try {
-      await cancelJob(jobId);
-      addToast("info", "لغو شد", "کار کپی لغو شد");
-    } catch (err) {
-      addToast("error", "خطا", (err as Error).message);
-    }
+    try { await cancelJob(jobId); addToast('info', 'Job cancelled', ''); }
+    catch (err) { addToast('error', 'Error', (err as Error).message); }
   };
 
-  if (loading) return <CustomerSkeleton />;
-
-  if (error) {
-    return (
-      <div
-        className="min-h-screen flex items-center justify-center p-4"
-        style={{ background: "var(--bg)" }}
-      >
-        <div className="card p-8 max-w-md text-center scale-in">
-          <div className="text-5xl mb-4">⚠️</div>
-          <h2
-            className="font-bold text-lg mb-2"
-            style={{ color: "var(--text)" }}
-          >
-            خطا در اتصال
-          </h2>
-          <p className="text-sm mb-6" style={{ color: "var(--red)" }}>
-            {error}
-          </p>
-          <button
-            onClick={() => window.location.reload()}
-            className="btn-primary"
-          >
-            تلاش مجدد
-          </button>
+  if (loading) return (
+    <div className="min-h-screen" style={{ background: 'var(--bg)' }}>
+      <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+        <div style={{ height: 44, background: 'var(--glass)', borderRadius: 10, border: '1px solid var(--border)' }} className="skeleton" />
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 12 }}>
+          {Array.from({ length: 10 }).map((_, i) => (
+            <div key={i} className="skeleton" style={{ aspectRatio: '2/3', borderRadius: 10 }} />
+          ))}
         </div>
       </div>
-    );
-  }
+    </div>
+  );
+
+  if (error) return (
+    <div style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ textAlign: 'center', padding: 40 }}>
+        <AlertTriangle size={56} style={{ color: 'var(--red)', margin: '0 auto 16px' }} />
+        <h2 style={{ color: 'var(--text1)', marginBottom: 8 }}>Connection Error</h2>
+        <p style={{ color: 'var(--red)', marginBottom: 24, fontSize: 13 }}>{error}</p>
+        <button className="btn-primary" onClick={() => window.location.reload()}>Retry</button>
+      </div>
+    </div>
+  );
 
   return (
-    <div className="min-h-screen" style={{ background: "var(--bg)" }}>
-      {/* Header */}
-      <header className="sticky top-0 z-40 glass-header">
-        <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between gap-3">
-          {/* Logo */}
-          <div className="flex items-center gap-2.5 flex-shrink-0">
-            <div
-              className="w-8 h-8 rounded-lg flex items-center justify-center shadow"
-              style={{
-                background:
-                  "linear-gradient(135deg, var(--accent), var(--accent2))",
-              }}
-            >
-              <Disc3 className="w-4 h-4" style={{ color: "#07070d" }} />
-            </div>
-            <span className="font-black text-lg brand-text">SmartCopy</span>
+    <div style={{ minHeight: '100vh', background: 'var(--bg)' }}>
+      {/* ── Header ── */}
+      <header className="topbar">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{
+            width: 34, height: 34, background: 'linear-gradient(145deg,var(--blue2),var(--cyan))',
+            borderRadius: 9, display: 'flex', alignItems: 'center', justifyContent: 'center',
+            boxShadow: '0 0 20px var(--blue-glow)', border: '1px solid rgba(255,255,255,0.15)', flexShrink: 0,
+          }}>
+            <Zap size={17} color="white" />
           </div>
+          <div style={{ fontSize: 15, fontWeight: 700 }}>
+            SmartCopy <span style={{ color: 'var(--blue)' }}>Pro</span>
+          </div>
+        </div>
 
-          {/* Center – stats bar */}
-          <div
-            className="hidden sm:flex items-center gap-4 text-xs"
-            style={{ color: "var(--text3)" }}
+        {/* Center stats */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, fontSize: 11, color: 'var(--text3)' }}>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+            <Film size={12} />
+            {media.length} titles
+          </span>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+            <div className={`live-dot ${wsConnected ? '' : 'offline'}`} style={{ width: 6, height: 6, borderRadius: '50%', background: wsConnected ? 'var(--green)' : 'var(--red)' }} />
+            {wsConnected ? 'Live' : 'Offline'}
+          </span>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          {/* Dark mode toggle */}
+          <button
+            onClick={toggleDark}
+            className="btn-icon"
+            style={{ width: 32, height: 32 }}
+            title={dark ? 'Light mode' : 'Dark mode'}
           >
-            <span className="flex items-center gap-1.5">
-              <Film className="w-3 h-3" />
-              {media.length.toLocaleString("fa")} عنوان
-            </span>
-            <span className="flex items-center gap-1.5">
-              <div className={`live-dot ${wsConnected ? "" : "offline"}`} />
-              {wsConnected ? "متصل" : "قطع"}
-            </span>
-          </div>
+            {dark ? <Sun size={14} /> : <Moon size={14} />}
+          </button>
 
-          {/* Actions */}
-          <div className="flex items-center gap-1">
-            <button
-              onClick={toggleDark}
-              className="p-2 rounded-lg transition-colors hover:bg-white/5"
-              style={{ color: "var(--text2)" }}
-            >
-              {dark ? (
-                <Sun className="w-4 h-4" />
-              ) : (
-                <Moon className="w-4 h-4" />
-              )}
-            </button>
-
-            {/* Cart button */}
-            <button
-              onClick={() => setIsDrawerOpen(true)}
-              className={`relative p-2 rounded-lg transition-all ${isDrawerOpen ? "bg-accent/10" : "hover:bg-white/5"}`}
-              style={{ color: isDrawerOpen ? "var(--accent)" : "var(--text2)" }}
-            >
-              <ShoppingCart className="w-5 h-5" />
-              {selectedMediaItems.length > 0 && (
-                <span
-                  className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full text-black text-xs font-black flex items-center justify-center"
-                  style={{ background: "var(--accent)", fontSize: "10px" }}
-                >
-                  {selectedMediaItems.length}
-                </span>
-              )}
-            </button>
-
-            {/* Queue button */}
-            <button
-              onClick={() => setShowQueue((q) => !q)}
-              className={`relative p-2 rounded-lg transition-all ${showQueue ? "bg-white/8" : "hover:bg-white/5"}`}
-              style={{ color: showQueue ? "var(--accent)" : "var(--text2)" }}
-            >
-              <ListOrdered className="w-5 h-5" />
-            </button>
-
-            {/* Admin */}
-            {getStoredToken() && (
-              <button
-                onClick={onAdminClick}
-                className="p-2 rounded-lg transition-colors hover:bg-white/5"
-                style={{ color: "var(--text2)" }}
-              >
-                <LayoutDashboard className="w-5 h-5" />
-              </button>
+          {/* Cart */}
+          <button
+            onClick={() => setIsDrawerOpen(true)}
+            style={{
+              position: 'relative', width: 32, height: 32, borderRadius: 8,
+              background: isDrawerOpen ? 'var(--blue-dim)' : 'var(--glass)',
+              border: '1px solid var(--border)', color: isDrawerOpen ? 'var(--blue)' : 'var(--text3)',
+              cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}
+            title="Selection cart"
+          >
+            <ShoppingCart size={14} />
+            {selectedMediaItems.length > 0 && (
+              <span style={{
+                position: 'absolute', top: -4, right: -4, width: 16, height: 16,
+                background: 'var(--blue)', borderRadius: '50%', fontSize: 9, fontWeight: 800,
+                color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                {selectedMediaItems.length}
+              </span>
             )}
+          </button>
+
+          {/* Queue */}
+          <button
+            onClick={() => setShowQueue(q => !q)}
+            style={{
+              position: 'relative', width: 32, height: 32, borderRadius: 8,
+              background: showQueue ? 'var(--glass)' : 'var(--glass)',
+              border: '1px solid var(--border)', color: showQueue ? 'var(--blue)' : 'var(--text3)',
+              cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}
+            title="Job queue"
+          >
+            <ListOrdered size={14} />
+            {activeJobCount > 0 && (
+              <span style={{
+                position: 'absolute', top: -4, right: -4, width: 16, height: 16,
+                background: 'var(--green)', borderRadius: '50%', fontSize: 9, fontWeight: 800,
+                color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                {activeJobCount}
+              </span>
+            )}
+          </button>
+
+          {/* Online badge */}
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 5, padding: '4px 10px',
+            background: 'var(--green-dim)', border: '1px solid rgba(0,245,160,0.28)',
+            borderRadius: 99, fontSize: 10, fontWeight: 700, color: 'var(--green)',
+            letterSpacing: '0.05em', boxShadow: '0 0 10px var(--green-glow)',
+          }}>
+            <span className="pulse-dot" />
+            Online
           </div>
+
+          {/* Admin */}
+          {getStoredToken() ? (
+            <button className="btn-ghost" style={{ padding: '6px 12px', fontSize: 11 }} onClick={onAdminClick}>
+              <LayoutDashboard size={12} /> Admin
+            </button>
+          ) : (
+            <button className="btn-ghost" style={{ padding: '6px 12px', fontSize: 11 }} onClick={onAdminClick}>
+              <Lock size={12} /> Admin
+            </button>
+          )}
         </div>
       </header>
 
-      <main className="max-w-6xl mx-auto px-4 py-6">
-        {/* Search + Filters */}
-        <div className="flex flex-col sm:flex-row gap-3 mb-5">
-          <div className="flex-1">
-            <SearchBar value={searchQuery} onChange={setSearchQuery} />
-          </div>
-          <CategoryFilter selected={selectedCategory} onChange={setCategory} />
+      <OfflineBanner />
+
+      {/* ── Main ── */}
+      <main style={{ maxWidth: 1400, margin: '0 auto', padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+        <FeaturedCarousel onSelect={m => toggleSelection(m)} />
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+          <SearchBar />
+          <CategoryFilter />
         </div>
 
-        {/* Featured Carousel */}
-        <FeaturedCarousel
-          onCopy={(mediaId) => {
-            const m = media.find((x) => x.id === mediaId);
-            if (m) toggleSelection(m);
-          }}
-        />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: -4 }}>
+          <div style={{ width: 3, height: 16, background: 'var(--blue)', borderRadius: 99, boxShadow: '0 0 8px var(--blue)' }} />
+          <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text2)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+            Media Library &nbsp;
+            <span style={{ color: 'var(--text3)', fontWeight: 400 }}>({filtered.length})</span>
+          </span>
+        </div>
 
-        <div
-          className={`grid gap-5 ${showQueue ? "lg:grid-cols-[1fr_320px]" : ""}`}
-        >
+        <div style={{ display: 'grid', gap: 20, gridTemplateColumns: showQueue ? '1fr 320px' : '1fr' }}>
           <div>
-            <div className="flex items-center justify-between mb-4">
-              <h2
-                className="text-sm font-semibold"
-                style={{ color: "var(--text2)" }}
-              >
-                <span
-                  className="font-black text-base"
-                  style={{ color: "var(--text)" }}
-                >
-                  {filtered.length.toLocaleString("fa")}
-                </span>{" "}
-                عنوان یافت شد
-              </h2>
-              {drives.length === 0 && (
-                <div
-                  className="flex items-center gap-1.5 text-xs"
-                  style={{
-                    color: "var(--orange)",
-                    background: "rgba(255,124,77,.08)",
-                    border: "1px solid rgba(255,124,77,.2)",
-                    borderRadius: "100px",
-                    padding: "4px 10px",
-                  }}
-                >
-                  <WifiOff className="w-3 h-3" />
-                  درایو USB شناسایی نشده
-                </div>
-              )}
-            </div>
-
-            {/* FIX: pass onPlay to MediaGrid → MediaCard */}
-            <MediaGrid
-              media={filtered}
-              onSelect={toggleSelection}
-              onPlay={setCopyModalMedia}
-              selectedIds={selectedIds}
-              disabled={drives.length === 0}
-            />
+            <MediaGrid onSelect={m => toggleSelection(m)} selectedIds={selectedIds} onPlay={setCopyModalMedia} />
           </div>
-
-          {/* Queue panel */}
           {showQueue && (
-            <div className="lg:col-span-1">
-              <div className="card sticky top-20 overflow-hidden">
-                <div
-                  className="flex items-center justify-between p-4 border-b"
-                  style={{ borderColor: "var(--border)" }}
-                >
-                  <h2
-                    className="font-bold text-sm"
-                    style={{ color: "var(--text)" }}
-                  >
-                    صف کپی
+            <div>
+              <div style={{
+                position: 'sticky', top: 80, background: 'var(--glass)', border: '1px solid var(--border)',
+                borderRadius: 'var(--r)', overflow: 'hidden', backdropFilter: 'blur(20px)',
+              }}>
+                <div style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  padding: '12px 16px', borderBottom: '1px solid var(--border)',
+                }}>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text1)' }}>
+                    Job Queue
                     {activeJobCount > 0 && (
-                      <span className="mr-2 chip chip-active">
-                        {activeJobCount} فعال
-                      </span>
+                      <span style={{
+                        marginLeft: 8, padding: '2px 7px', borderRadius: 99, fontSize: 9,
+                        background: 'var(--green-dim)', color: 'var(--green)', fontWeight: 700,
+                      }}>{activeJobCount} active</span>
                     )}
-                  </h2>
-                  <button
-                    onClick={() => setShowQueue(false)}
-                    className="w-6 h-6 rounded-md flex items-center justify-center text-xs hover:bg-white/8 transition-colors"
-                    style={{ color: "var(--text3)" }}
-                  >
-                    ✕
+                  </span>
+                  <button className="btn-icon" onClick={() => setShowQueue(false)} style={{ width: 24, height: 24 }}>
+                    <X size={12} />
                   </button>
                 </div>
-                <div className="p-3 max-h-[calc(100vh-200px)] overflow-y-auto">
-                  <JobQueue
-                    jobs={jobsList}
-                    mediaMap={mediaMap}
-                    onCancel={handleCancelJob}
-                  />
+                <div style={{ padding: 12, maxHeight: 'calc(100vh - 200px)', overflowY: 'auto' }}>
+                  <JobQueue jobs={jobsList} mediaMap={mediaMap} onCancel={handleCancelJob} />
                 </div>
               </div>
             </div>
@@ -530,144 +428,87 @@ function CustomerApp({
         </div>
       </main>
 
-      {/* Selection Drawer (Cart) */}
+      {/* ── Drawers & Modals ── */}
       {isDrawerOpen && (
         <MediaSelectionDrawer
           selectedMedia={selectedMediaItems}
-          onRemove={removeMedia}
+          onRemove={id => setSelectedMediaItems(prev => prev.filter(x => x.id !== id))}
           onClear={() => setSelectedMediaItems([])}
           onClose={() => setIsDrawerOpen(false)}
           onSubmit={handleBatchRequest}
           drives={drives}
         />
       )}
-
-      {/* FIX: Single-item CopyModal (triggered from play button) */}
       {copyModalMedia && (
         <CopyModal
           media={copyModalMedia}
           drives={drives}
           pricingTiers={pricingTiers}
-          onConfirm={handleSingleCopy}
-          onClose={() => setCopyModalMedia(null)}
+          onClose={() => { setCopyModalMedia(null); setShowQueue(true); }}
         />
       )}
     </div>
   );
 }
 
-// ─── Customer skeleton ────────────────────────────────────────────────────────
-
-function CustomerSkeleton() {
+/* ─── AdminDashboardWrapper (connects to context toasts) ─────── */
+function AdminDashboardWrapper({ onBack, onLogout }: { onBack: () => void; onLogout: () => void }) {
+  const { addToast } = useSmartCopy();
   return (
-    <div className="min-h-screen" style={{ background: "var(--bg)" }}>
-      <div className="glass-header sticky top-0 z-40">
-        <div className="max-w-6xl mx-auto px-4 h-14 flex items-center gap-3">
-          <div className="skeleton w-32 h-6" />
-          <div className="flex-1" />
-          <div className="skeleton w-20 h-6" />
-        </div>
-      </div>
-      <main className="max-w-6xl mx-auto px-4 py-6">
-        <div className="flex gap-3 mb-5">
-          <div className="skeleton flex-1 h-10" />
-          <div className="skeleton w-40 h-10" />
-        </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-          {Array.from({ length: 15 }).map((_, i) => (
-            <div key={i} className="skeleton" style={{ aspectRatio: "2/3" }} />
-          ))}
-        </div>
-      </main>
-    </div>
+    <AdminDashboardModern addToast={addToast} onBack={onBack} onLogout={onLogout} />
   );
 }
 
-// ─── Splash Screen ────────────────────────────────────────────────────────────
-
-function SplashScreen() {
-  return (
-    <div className="fixed inset-0 z-[100] bg-[#07070d] flex flex-col items-center justify-center">
-      <div className="relative">
-        <div className="w-24 h-24 rounded-[32px] bg-gradient-to-br from-[#e8c547] to-[#f0a500] flex items-center justify-center shadow-[0_0_50px_rgba(232,197,71,0.3)] animate-splash-pulse">
-          <Disc3 className="w-12 h-12 text-black" />
-        </div>
-        <div className="absolute -inset-4 bg-[#e8c547]/10 rounded-[40px] blur-2xl animate-pulse delay-75" />
-      </div>
-      <h1 className="mt-10 text-4xl font-black brand-text tracking-tighter">
-        SmartCopy Pro
-      </h1>
-      <p className="mt-2 text-[#8888a8] text-[10px] uppercase font-bold tracking-[0.3em]">
-        Master Media Distribution
-      </p>
-      <div className="mt-8 w-40 h-1 bg-white/5 rounded-full overflow-hidden relative">
-        <div className="absolute inset-0 bg-accent animate-progress-fast" />
-      </div>
-    </div>
-  );
-}
-
-// ─── Root App ─────────────────────────────────────────────────────────────────
-
+/* ─── Root App ───────────────────────────────────────────────── */
 export default function App() {
-  const [view, setView] = useState<"customer" | "admin" | "login">("customer");
-  const [init, setInit] = useState(true);
-  const { toasts, addToast, dismiss } = useToasts();
+  const [view,  setView ] = useState<'customer' | 'admin' | 'login'>('customer');
+  const [init,  setInit ] = useState(true);
   const { dark, toggle: toggleDark } = useDarkMode();
 
   useEffect(() => {
     const token = getStoredToken();
-    if (token) {
-      setAuthToken(token);
-      if (window.location.hash === "#admin") setView("admin");
+    if (token) setAuthToken(token);
+    if (window.location.hash === '#admin' || window.location.pathname === '/admin') {
+      setView(token ? 'admin' : 'login');
     }
-
-    const timer = setTimeout(() => setInit(false), 2400);
-    return () => clearTimeout(timer);
+    const onExpired = () => {
+      setView('login');
+    };
+    window.addEventListener('sc:auth:expired', onExpired);
+    const timer = setTimeout(() => setInit(false), 2200);
+    return () => { window.removeEventListener('sc:auth:expired', onExpired); clearTimeout(timer); };
   }, []);
 
-  const handleAdminClick = () => {
-    if (getStoredToken()) setView("admin");
-    else setView("login");
-  };
-
-  const handleLogin = () => {
-    addToast("success", "خوش آمدید", "به پنل مدیریت وارد شدید.");
-    setView("admin");
-  };
-
-  const handleLogout = () => {
-    setAuthToken(null);
-    setView("customer");
-    addToast("info", "خروج", "از سیستم خارج شدید.");
-  };
+  useEffect(() => {
+    if (view === 'admin') document.documentElement.classList.add('light');
+    else document.documentElement.classList.toggle('light', !dark);
+  }, [dark, view]);
 
   return (
     <SmartCopyProvider>
       {init && <SplashScreen />}
-
-      <div
-        className={`min-h-screen live-bg transition-opacity duration-700 ${init ? "opacity-0" : "opacity-100"}`}
-      >
-        {view === "login" ? (
-          <LoginScreen onLogin={handleLogin} />
-        ) : view === "admin" ? (
-          <AdminDashboardModern
-            onBack={() => setView("customer")}
-            onLogout={handleLogout}
-            addToast={addToast}
+      <div style={{ minHeight: '100vh', opacity: init ? 0 : 1, transition: 'opacity 0.7s ease' }}>
+        {view === 'login' ? (
+          <LoginModal
+            onClose={() => setView('customer')}
+            onSuccess={() => setView('admin')}
           />
+        ) : view === 'admin' ? (
+          <div style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
+            <AdminDashboardWrapper
+              onBack={() => setView('customer')}
+              onLogout={() => { setAuthToken(null); setView('customer'); }}
+            />
+          </div>
         ) : (
           <CustomerApp
-            onAdminClick={handleAdminClick}
-            addToast={addToast}
+            onAdminClick={() => setView(getStoredToken() ? 'admin' : 'login')}
             dark={dark}
             toggleDark={toggleDark}
           />
         )}
       </div>
-
-      <ToastContainer toasts={toasts} onDismiss={dismiss} />
+      <ToastContainer />
     </SmartCopyProvider>
   );
 }

@@ -1,182 +1,113 @@
-/**
- * Drive & Agent Panel — Cards per drive (free/used, status) and per agent (online/offline, last seen).
- * Color-coded indicator; expand drawer for details.
- */
-import { useState } from 'react';
-import { HardDrive, Cpu, ChevronDown, ChevronLeft } from 'lucide-react';
-import { formatBytes } from '../lib/utils';
-import { ModalDrawer } from './ModalDrawer';
-import type { Drive } from '../lib/types';
+import { useState, useEffect, useCallback } from 'react';
+import { Cpu, HardDrive, RefreshCw, Wifi, WifiOff, AlertCircle } from 'lucide-react';
+import { adminApi } from '../lib/api';
+import { timeAgo } from '../lib/utils';
 import type { Agent } from '../lib/types';
 
-export function DriveAgentPanel({
-  drives,
-  agents,
-  loading,
-}: {
-  drives: Drive[];
-  agents: Agent[];
-  loading?: boolean;
-}) {
-  const [driveDetail, setDriveDetail] = useState<Drive | null>(null);
-  const [agentDetail, setAgentDetail] = useState<Agent | null>(null);
+interface Props {
+  addToast: (type: 'success' | 'error' | 'info', title: string, msg?: string) => void;
+}
 
-  if (loading) {
-    return (
-      <div className="card p-4 rounded-xl">
-        <div className="skeleton h-6 w-32 mb-3" />
-        <div className="skeleton h-20 w-full rounded-lg" />
-      </div>
-    );
-  }
+export function DriveAgentPanel({ addToast }: Props) {
+  const [agents,  setAgents]  = useState<Agent[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error,   setError]   = useState('');
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const res = await adminApi.agents();
+      setAgents(res.agents);
+    } catch (e) {
+      setError((e as Error).message || 'Failed to load agents');
+      setAgents([]);
+    } finally { setLoading(false); }
+  }, []);
+
+  useEffect(() => { load(); const t = setInterval(load, 15000); return () => clearInterval(t); }, [load]);
+
+  const online  = agents.filter(a => a.status === 'online');
+  const offline = agents.filter(a => a.status === 'offline');
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-      {/* Drives */}
-      <div
-        className="card p-4 rounded-xl"
-        style={{ border: '1px solid var(--border)', boxShadow: 'var(--shadow-1)' }}
-      >
-        <h3 className="font-bold text-sm flex items-center gap-2 mb-3" style={{ color: 'var(--text)' }}>
-          <HardDrive className="w-4 h-4" style={{ color: 'var(--blue)' }} />
-          درایوها
-          <span className="chip chip-completed text-xs">{drives.length}</span>
-        </h3>
-        <div className="space-y-2 max-h-48 overflow-y-auto">
-          {drives.length === 0 ? (
-            <p className="text-sm py-2" style={{ color: 'var(--text3)' }}>درایوی متصل نیست</p>
-          ) : (
-            drives.map((d) => (
-              <div
-                key={d.id}
-                className="flex items-center gap-2 p-2 rounded-lg border cursor-pointer hover:bg-white/5 transition-colors"
-                style={{ borderColor: 'var(--border)' }}
-                onClick={() => setDriveDetail(d)}
-                role="button"
-                tabIndex={0}
-                onKeyDown={(e) => e.key === 'Enter' && setDriveDetail(d)}
-              >
-                <div
-                  className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${d.is_locked ? 'bg-amber-500' : 'bg-green-500'}`}
-                  title={d.is_locked ? 'قفل' : 'آزاد'}
-                />
-                <span className="text-xs font-medium truncate flex-1" style={{ color: 'var(--text)' }}>
-                  {d.label || d.path}
-                </span>
-                <span className="text-xs" style={{ color: 'var(--text3)' }}>
-                  {formatBytes(d.free_bytes ?? 0)} آزاد
-                </span>
-                <ChevronLeft className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--text3)' }} />
-              </div>
-            ))
+    <div className="card" style={{ padding: '16px' }}>
+      <div className="card-title">
+        <Cpu size={13} style={{ color: 'var(--violet)' }} />
+        Agents
+        <div style={{ marginLeft: 'auto', display: 'flex', gap: 6, alignItems: 'center' }}>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 9, color: 'var(--green)' }}>
+            <Wifi size={9} /> {online.length}
+          </span>
+          {offline.length > 0 && (
+            <span style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 9, color: 'var(--red)' }}>
+              <WifiOff size={9} /> {offline.length}
+            </span>
           )}
         </div>
+        <button className="btn-icon" style={{ width: 26, height: 26 }} onClick={load} disabled={loading} aria-label="Close">
+          <RefreshCw size={11} className={loading ? 'anim-spin' : ''} />
+        </button>
       </div>
 
-      {/* Agents */}
-      <div
-        className="card p-4 rounded-xl"
-        style={{ border: '1px solid var(--border)', boxShadow: 'var(--shadow-1)' }}
-      >
-        <h3 className="font-bold text-sm flex items-center gap-2 mb-3" style={{ color: 'var(--text)' }}>
-          <Cpu className="w-4 h-4" style={{ color: 'var(--purple)' }} />
-          عامل‌ها
-          <span className="chip chip-active text-xs">{agents.filter((a) => a.online).length} / {agents.length}</span>
-        </h3>
-        <div className="space-y-2 max-h-48 overflow-y-auto">
-          {agents.length === 0 ? (
-            <p className="text-sm py-2" style={{ color: 'var(--text3)' }}>عاملی ثبت نشده</p>
-          ) : (
-            agents.map((a) => (
-              <div
-                key={a.id}
-                className="flex items-center gap-2 p-2 rounded-lg border cursor-pointer hover:bg-white/5 transition-colors"
-                style={{ borderColor: 'var(--border)' }}
-                onClick={() => setAgentDetail(a)}
-                role="button"
-                tabIndex={0}
-                onKeyDown={(e) => e.key === 'Enter' && setAgentDetail(a)}
-              >
-                <div
-                  className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${a.online ? 'bg-green-500' : 'bg-red-500/80'}`}
-                  title={a.online ? 'آنلاین' : 'آفلاین'}
-                />
-                <span className="text-xs font-medium truncate flex-1" style={{ color: 'var(--text)' }}>
-                  {a.hostname}
-                </span>
-                <span className="text-xs" style={{ color: 'var(--text3)' }}>
-                  v{a.version}
-                </span>
-                <ChevronLeft className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--text3)' }} />
-              </div>
-            ))
-          )}
+      {error && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', background: 'var(--red-dim)', borderRadius: 'var(--r-sm)', fontSize: 11, color: 'var(--red)', marginBottom: 10 }}>
+          <AlertCircle size={12} /> {error}
         </div>
+      )}
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+        {loading ? (
+          [1,2,3].map(i => <div key={i} className="skeleton" style={{ height: 48, borderRadius: 'var(--r-sm)' }} />)
+        ) : !agents.length ? (
+          <div style={{ textAlign: 'center', padding: '16px', color: 'var(--text3)', fontSize: 12 }}>No agents registered</div>
+        ) : (
+          agents.map(a => {
+            const isOnline = a.status === 'online';
+            return (
+              <div key={a.agent_id} style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 10,
+                padding: '9px 12px',
+                background: 'rgba(255,255,255,0.025)',
+                border: `1px solid ${isOnline ? 'rgba(0,245,160,0.12)' : 'var(--border)'}`,
+                borderRadius: 'var(--r-sm)',
+                transition: 'var(--t)',
+              }}>
+                {/* Status indicator */}
+                <div style={{
+                  width: 7, height: 7,
+                  borderRadius: '50%',
+                  background: isOnline ? 'var(--green)' : 'var(--text3)',
+                  boxShadow: isOnline ? '0 0 8px var(--green-glow)' : 'none',
+                  flexShrink: 0,
+                  animation: isOnline ? 'pulse 2s infinite' : 'none',
+                }} />
+
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text1)', fontFamily: 'DM Mono' }}>
+                    {a.hostname}
+                    {a.ip && <span style={{ fontSize: 9, color: 'var(--text3)', marginLeft: 6 }}>{a.ip}</span>}
+                  </div>
+                  <div style={{ fontSize: 10, color: 'var(--text3)', display: 'flex', gap: 8, marginTop: 2 }}>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+                      <HardDrive size={9} /> {a.drives_count} drives
+                    </span>
+                    <span>{a.jobs_active} active</span>
+                    <span>v{a.version ?? '—'}</span>
+                    <span>{timeAgo(a.last_seen)}</span>
+                  </div>
+                </div>
+
+                <span className={`chip ${isOnline ? 'chip-online' : 'chip-offline'}`} style={{ fontSize: 8 }}>
+                  {isOnline ? 'Online' : 'Offline'}
+                </span>
+              </div>
+            );
+          })
+        )}
       </div>
-
-      <ModalDrawer
-        open={!!driveDetail}
-        onClose={() => setDriveDetail(null)}
-        title={driveDetail ? (driveDetail.label || driveDetail.path) : ''}
-        variant="drawer-right"
-      >
-        {driveDetail && (
-          <div className="space-y-3 text-sm">
-            <div className="flex justify-between">
-              <span style={{ color: 'var(--text3)' }}>مسیر</span>
-              <span className="font-mono text-xs break-all">{driveDetail.path}</span>
-            </div>
-            <div className="flex justify-between">
-              <span style={{ color: 'var(--text3)' }}>ظرفیت</span>
-              <span>{formatBytes(driveDetail.capacity_bytes ?? 0)}</span>
-            </div>
-            <div className="flex justify-between">
-              <span style={{ color: 'var(--text3)' }}>آزاد</span>
-              <span>{formatBytes(driveDetail.free_bytes ?? 0)}</span>
-            </div>
-            <div className="flex justify-between">
-              <span style={{ color: 'var(--text3)' }}>وضعیت</span>
-              <span className={driveDetail.is_locked ? 'text-amber-500' : 'text-green-500'}>
-                {driveDetail.is_locked ? 'قفل' : 'آزاد'}
-              </span>
-            </div>
-          </div>
-        )}
-      </ModalDrawer>
-
-      <ModalDrawer
-        open={!!agentDetail}
-        onClose={() => setAgentDetail(null)}
-        title={agentDetail ? agentDetail.hostname : ''}
-        variant="drawer-right"
-      >
-        {agentDetail && (
-          <div className="space-y-3 text-sm">
-            <div className="flex justify-between">
-              <span style={{ color: 'var(--text3)' }}>وضعیت</span>
-              <span className={agentDetail.online ? 'text-green-500' : 'text-red-500'}>
-                {agentDetail.online ? 'آنلاین' : 'آفلاین'}
-              </span>
-            </div>
-            <div className="flex justify-between">
-              <span style={{ color: 'var(--text3)' }}>نسخه</span>
-              <span className="font-mono">{agentDetail.version}</span>
-            </div>
-            {agentDetail.last_seen != null && (
-              <div className="flex justify-between">
-                <span style={{ color: 'var(--text3)' }}>آخرین بازدید</span>
-                <span>{new Date(agentDetail.last_seen * 1000).toLocaleString('fa-IR')}</span>
-              </div>
-            )}
-            {agentDetail.drives != null && (
-              <div>
-                <span style={{ color: 'var(--text3)' }}>درایوها</span>
-                <p className="font-mono text-xs mt-1 break-all">{String(agentDetail.drives)}</p>
-              </div>
-            )}
-          </div>
-        )}
-      </ModalDrawer>
     </div>
   );
 }

@@ -1,173 +1,181 @@
-import { useState, useEffect, useRef } from 'react';
-import { ChevronLeft, ChevronRight, Flame, Sparkles, Play } from 'lucide-react';
-import { formatBytes, formatPrice, mediaEmoji } from '../lib/utils';
+import { useState, useEffect } from 'react';
+import { ChevronRight, ChevronLeft, Zap, WifiOff } from 'lucide-react';
+import { useSmartCopy } from '../context/SmartCopyContext';
 import type { Media } from '../lib/types';
+import { formatBytes, mediaEmoji, typeLabel } from '../lib/utils';
 
-import { mediaApi } from '../lib/api';
+const GENRE_GRADIENTS: Record<string, string> = {
+  'Science Fiction': 'linear-gradient(135deg, rgba(0,100,200,0.6), rgba(0,229,255,0.4))',
+  'Action':          'linear-gradient(135deg, rgba(77,159,255,0.6), rgba(0,229,255,0.4))',
+  'Drama':           'linear-gradient(135deg, rgba(130,80,220,0.6), rgba(192,132,252,0.4))',
+  'Comedy':          'linear-gradient(135deg, rgba(200,160,0,0.5), rgba(255,204,68,0.4))',
+  'Horror':          'linear-gradient(135deg, rgba(180,30,60,0.6), rgba(255,85,119,0.4))',
+  'Fantasy':         'linear-gradient(135deg, rgba(100,50,200,0.6), rgba(192,132,252,0.4))',
+};
 
-interface FeaturedItem extends Media {
-  featured_tag?: 'NEW' | 'TRENDING' | null;
-}
+interface Props { onSelect: (m: Media) => void; }
 
-interface FeaturedCarouselProps {
-  onCopy: (mediaId: string) => void;
-}
-
-export function FeaturedCarousel({ onCopy }: FeaturedCarouselProps) {
-  const [items, setItems] = useState<FeaturedItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const scrollRef = useRef<HTMLDivElement>(null);
+export function FeaturedCarousel({ onSelect }: Props) {
+  const { media, serverOnline } = useSmartCopy();
+  const featured = media.slice(0, 6);
+  const [idx, setIdx] = useState(0);
 
   useEffect(() => {
-    mediaApi.featured()
-      .then(data => {
-        setItems(data.items || []);
-        setLoading(false);
-      })
-      .catch(() => setLoading(false));
-  }, []);
+    if (!featured.length) return;
+    const t = setInterval(() => setIdx(i => (i + 1) % featured.length), 5000);
+    return () => clearInterval(t);
+  }, [featured.length]);
 
-  const scroll = (dir: 'left' | 'right') => {
-    if (!scrollRef.current) return;
-    const amount = 300;
-    scrollRef.current.scrollBy({
-      left: dir === 'left' ? -amount : amount,
-      behavior: 'smooth',
-    });
-  };
-
-  if (loading) {
+  if (!serverOnline || !featured.length) {
     return (
-      <div className="featured-section">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="skeleton h-6 w-40" />
-        </div>
-        <div className="featured-scroll">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="featured-card" style={{ flex: '0 0 280px' }}>
-              <div className="skeleton" style={{ aspectRatio: '16/9' }} />
-              <div className="p-4 space-y-2">
-                <div className="skeleton h-4 w-3/4" />
-                <div className="skeleton h-3 w-1/2" />
-              </div>
-            </div>
-          ))}
-        </div>
+      <div style={{
+        borderRadius: 'var(--r-lg)',
+        height: 200,
+        background: 'var(--bg3)',
+        border: '1px solid var(--border)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexDirection: 'column',
+        gap: 8,
+        color: 'var(--text3)',
+      }}>
+        <WifiOff size={28} style={{ opacity: 0.3 }} />
+        <p style={{ fontSize: 12 }}>Connect to server to see featured content</p>
       </div>
     );
   }
 
-  if (items.length === 0) return null;
+  const m = featured[idx];
+  const gradient = GENRE_GRADIENTS[m.category] ?? 'linear-gradient(135deg, rgba(30,60,140,0.7), rgba(0,100,200,0.5))';
 
   return (
-    <div className="featured-section">
-      {/* Hero Banner */}
-      <div className="hero-banner fade-up">
-        <div className="hero-content">
-          <h2 className="text-xl font-black mb-2" style={{ color: 'var(--text)' }}>
-            <span className="brand-text">پیشنهاد ویژه</span> امروز
+    <div style={{
+      borderRadius: 'var(--r-lg)',
+      overflow: 'hidden',
+      position: 'relative',
+      height: 200,
+      background: 'var(--bg3)',
+      border: '1px solid var(--border2)',
+      boxShadow: 'var(--shadow-2)',
+      cursor: 'pointer',
+      flexShrink: 0,
+    }}
+      onClick={() => onSelect(m)}
+    >
+      {/* Gradient background */}
+      <div style={{
+        position: 'absolute', inset: 0,
+        background: gradient,
+        transition: 'background 0.8s ease',
+      }} />
+
+      {/* Pattern overlay */}
+      <div style={{
+        position: 'absolute', inset: 0,
+        backgroundImage: 'radial-gradient(circle at 20% 50%, rgba(255,255,255,0.03) 1px, transparent 1px)',
+        backgroundSize: '24px 24px',
+      }} />
+
+      {/* Content */}
+      <div style={{
+        position: 'absolute', inset: 0,
+        padding: '20px 24px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 20,
+      }}>
+        <div style={{ fontSize: '4rem', flexShrink: 0 }}>{mediaEmoji(m.type)}</div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+            <span className="chip chip-live" style={{ fontSize: 9 }}>
+              <span className="pulse-dot" style={{ width: 5, height: 5 }} />
+              Trending
+            </span>
+            <span className={`chip chip-${m.type}`} style={{ fontSize: 9 }}>{typeLabel(m.type)}</span>
+          </div>
+          <h2 style={{
+            fontSize: 22,
+            fontWeight: 800,
+            color: 'var(--text1)',
+            marginBottom: 6,
+            lineHeight: 1.2,
+          }}>
+            {m.name}
           </h2>
-          <p className="text-sm mb-3" style={{ color: 'var(--text2)' }}>
-            جدیدترین و پرطرفدارترین فیلم‌ها برای شما
+          <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', marginBottom: 10 }}>
+            {m.category} · {formatBytes(m.size_bytes)}
           </p>
-          <div className="flex items-center gap-3">
-            <span className="chip chip-completed">
-              <Sparkles className="w-3 h-3" />
-              {items.filter(i => i.featured_tag === 'NEW').length} جدید
-            </span>
-            <span className="chip chip-failed" style={{ background: 'rgba(255,124,77,.12)', color: '#ff7c4d', borderColor: 'rgba(255,124,77,.2)' }}>
-              <Flame className="w-3 h-3" />
-              {items.filter(i => i.featured_tag === 'TRENDING').length} پرطرفدار
-            </span>
-          </div>
-        </div>
-        <span className="hero-emoji">🎬</span>
-      </div>
-
-      {/* Carousel header */}
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="font-bold text-base" style={{ color: 'var(--text)' }}>
-          ✨ ویترین
-        </h3>
-        <div className="flex gap-1">
           <button
-            onClick={() => scroll('right')}
-            className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors hover:bg-white/8"
-            style={{ color: 'var(--text2)', border: '1px solid var(--border)' }}
+            className="btn-primary"
+            style={{ padding: '8px 18px', fontSize: 12 }}
+            onClick={e => { e.stopPropagation(); onSelect(m); }}
           >
-            <ChevronRight className="w-4 h-4" />
-          </button>
-          <button
-            onClick={() => scroll('left')}
-            className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors hover:bg-white/8"
-            style={{ color: 'var(--text2)', border: '1px solid var(--border)' }}
-          >
-            <ChevronLeft className="w-4 h-4" />
+            <Zap size={13} />
+            Quick Copy
           </button>
         </div>
+        {m.price_usd !== undefined && (
+          <div style={{
+            fontSize: 24,
+            fontWeight: 800,
+            color: 'white',
+            fontFamily: 'DM Mono, monospace',
+            flexShrink: 0,
+          }}>
+            ${m.price_usd.toFixed(2)}
+          </div>
+        )}
       </div>
 
-      {/* Scrollable cards */}
-      <div ref={scrollRef} className="featured-scroll">
-        {items.map((item, i) => (
-          <div
-            key={item.id}
-            className="featured-card fade-up"
-            style={{ animationDelay: `${i * 0.06}s` }}
-            onClick={() => item.is_copyable && onCopy(item.id)}
+      {/* Nav buttons */}
+      {featured.length > 1 && (
+        <>
+          <button
+            style={{
+              position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
+              background: 'rgba(0,0,0,0.5)', border: '1px solid var(--border2)',
+              borderRadius: 8, color: 'white', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              width: 32, height: 32, backdropFilter: 'blur(8px)',
+              zIndex: 2,
+            }}
+            onClick={e => { e.stopPropagation(); setIdx(i => (i - 1 + featured.length) % featured.length); }}
           >
-            {/* Ribbon */}
-            {item.featured_tag && (
-              <div className={`ribbon ${item.featured_tag === 'NEW' ? 'ribbon-new' : 'ribbon-trending'}`}>
-                {item.featured_tag === 'NEW' ? (
-                  <><Sparkles className="w-3 h-3 inline-block mr-1" />جدید</>
-                ) : (
-                  <><Flame className="w-3 h-3 inline-block mr-1" />پرطرفدار</>
-                )}
-              </div>
-            )}
+            <ChevronRight size={16} />
+          </button>
+          <button
+            style={{
+              position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)',
+              background: 'rgba(0,0,0,0.5)', border: '1px solid var(--border2)',
+              borderRadius: 8, color: 'white', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              width: 32, height: 32, backdropFilter: 'blur(8px)',
+              zIndex: 2,
+            }}
+            onClick={e => { e.stopPropagation(); setIdx(i => (i + 1) % featured.length); }}
+          >
+            <ChevronLeft size={16} />
+          </button>
+        </>
+      )}
 
-            {/* Quality ribbon */}
-            {item.category === '4K' && (
-              <div className="ribbon ribbon-4k" style={{ left: 'var(--space-2)', right: 'auto' }}>
-                4K UHD
-              </div>
-            )}
-
-            {/* Poster */}
-            <div className="featured-card-poster group">
-              <span className="text-5xl select-none opacity-70 group-hover:scale-110 transition-transform" style={{ transitionDuration: '400ms' }}>
-                {mediaEmoji(item.type)}
-              </span>
-              {/* Dot pattern overlay */}
-              <div className="absolute inset-0 opacity-5"
-                   style={{ backgroundImage: 'radial-gradient(circle, rgba(255,255,255,.4) 1px, transparent 1px)', backgroundSize: '16px 16px' }} />
-              {/* Play overlay */}
-              <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity" style={{ transitionDuration: '200ms' }}>
-                <div className="w-10 h-10 rounded-full flex items-center justify-center shadow-lg"
-                     style={{ background: 'linear-gradient(135deg, var(--accent), var(--accent2))' }}>
-                  <Play className="w-4 h-4 fill-current" style={{ color: '#07070d', marginRight: '-2px' }} />
-                </div>
-              </div>
-            </div>
-
-            {/* Body */}
-            <div className="featured-card-body">
-              <h4 className="font-bold text-sm leading-snug mb-1 line-clamp-2" style={{ color: 'var(--text)' }}>
-                {item.name}
-              </h4>
-              <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--text3)' }}>
-                <span className={`chip ${item.category === '4K' ? 'chip-4k' : item.category === 'HD' ? 'chip-hd' : 'chip-sd'}`}
-                      style={{ fontSize: '0.6rem', padding: '1px 6px' }}>
-                  {item.category}
-                </span>
-                <span className="mono">{formatBytes(item.size_bytes)}</span>
-                {item.price_usd !== undefined && item.price_usd > 0 && (
-                  <span className="font-bold" style={{ color: 'var(--accent)' }}>{formatPrice(item.price_usd)}</span>
-                )}
-              </div>
-            </div>
-          </div>
+      {/* Dots */}
+      <div style={{
+        position: 'absolute', bottom: 12, left: '50%', transform: 'translateX(-50%)',
+        display: 'flex', gap: 5,
+      }}>
+        {featured.map((_, i) => (
+          <div key={i} style={{
+            width: i === idx ? 18 : 5,
+            height: 5,
+            borderRadius: 99,
+            background: i === idx ? 'var(--blue)' : 'rgba(255,255,255,0.25)',
+            transition: 'all 0.3s ease',
+            cursor: 'pointer',
+          }}
+            onClick={e => { e.stopPropagation(); setIdx(i); }}
+          />
         ))}
       </div>
     </div>

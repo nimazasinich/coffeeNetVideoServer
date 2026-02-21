@@ -1,257 +1,178 @@
-/**
- * SmartCopy API Client
- * Replaces @supabase/supabase-js with a lightweight custom client.
- * Uses native fetch() for REST and native WebSocket for real-time.
- * Zero external dependencies.
- */
-
+/* SmartCopy Pro — Unified API Client (Merged v4+v6) */
 import type {
-  Media, Drive, Job, PricingTier, Sale,
-  DashboardStats, DailyReport, WSEvent, WSEventType, Agent,
+  Media, Drive, PricingTier, Job, Agent, Settings,
+  DashboardSnapshot, DashboardStats, DailyReport, Sale, WSEvent, WSEventType,
 } from './types';
 
-// ─── Config ───────────────────────────────────────────────────────────────────
+const BASE = '';
 
-const BASE_URL = '';   // Same-origin (served by FastAPI)
-let   AUTH_TOKEN: string | null = null;
+/* ── Token management ───────────────────────────────────────── */
+let AUTH_TOKEN: string | null = null;
 
 export function setAuthToken(token: string | null) {
   AUTH_TOKEN = token;
   if (token) localStorage.setItem('sc_admin_token', token);
   else       localStorage.removeItem('sc_admin_token');
+  // Also keep sessionStorage in sync for V6 compatibility
+  if (token) sessionStorage.setItem('sc_token', token);
+  else       sessionStorage.removeItem('sc_token');
 }
 
 export function getStoredToken(): string | null {
-  return localStorage.getItem('sc_admin_token');
+  return localStorage.getItem('sc_admin_token') || sessionStorage.getItem('sc_token');
 }
 
-// ─── HTTP Client ──────────────────────────────────────────────────────────────
+/* ── HTTP core ──────────────────────────────────────────────── */
+async function req<T>(method: string, path: string, body?: unknown, auth = true): Promise<T> {
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  const token = AUTH_TOKEN || getStoredToken();
+  if (auth && token) headers['Authorization'] = `Bearer ${token}`;
 
-async function request<T>(
-  path:    string,
-  options: RequestInit = {},
-  auth     = false
-): Promise<T> {
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-    ...(options.headers as Record<string, string> || {}),
-  };
-
-  if (auth && AUTH_TOKEN) {
-    headers['Authorization'] = `Bearer ${AUTH_TOKEN}`;
-  }
-
-  const res = await fetch(BASE_URL + path, { ...options, headers });
+  const res = await fetch(`${BASE}${path}`, {
+    method,
+    headers,
+    body: body ? JSON.stringify(body) : undefined,
+  });
 
   if (res.status === 401) {
     setAuthToken(null);
+    window.dispatchEvent(new CustomEvent('sc:auth:expired'));
     throw new Error('Session expired. Please log in again.');
   }
   if (!res.ok) {
-    const body = await res.json().catch(() => ({ detail: `HTTP ${res.status}` }));
-    throw new Error(body.detail || `HTTP ${res.status}`);
+    let msg = `HTTP ${res.status}`;
+    try { const d = await res.json(); msg = d.detail ?? d.message ?? msg; } catch { /**/ }
+    throw new Error(msg);
   }
-
-  return res.json() as Promise<T>;
+  return res.json();
 }
 
-// ─── Public Media API ─────────────────────────────────────────────────────────
+const get  = <T>(p: string, auth = true)           => req<T>('GET',    p, undefined, auth);
+const post = <T>(p: string, b: unknown, auth = true) => req<T>('POST',   p, b, auth);
+const put  = <T>(p: string, b: unknown, auth = true) => req<T>('PUT',    p, b, auth);
+const patch = <T>(p: string, b: unknown, auth = true) => req<T>('PATCH', p, b, auth);
+
+/* ── Public API ─────────────────────────────────────────────── */
+export const publicApi = {
+  media: (q?: string, cat?: string) =>
+    get<{ items: Media[]; total: number }>(
+      `/api/media?${new URLSearchParams({ ...(q ? { q } : {}), ...(cat ? { category: cat } : {}) }).toString()}`,
+      false
+    ),
+  drives:   () => get<{ drives: Drive[] }>('/api/drives', false),
+  pricing:  () => get<{ tiers: PricingTier[] }>('/api/pricing', false),
+  createJob: (payload: {
+    media_id: string; drive_id?: string | null;
+    delivery_type: string; payment_mode: string; amount_cents?: number;
+  }) => post<{ job_id: string }>('/api/jobs', payload, false),
+};
 
 export const mediaApi = {
-  list: (params?: { category?: string; search?: string }): Promise<{ items: Media[]; total: number }> => {
+  list: (params?: { category?: string; search?: string }) => {
     const qs = new URLSearchParams();
     if (params?.category) qs.set('category', params.category);
     if (params?.search)   qs.set('search',   params.search);
-    const query = qs.toString() ? `?${qs}` : '';
-    return request(`/api/media${query}`);
+    return get<{ items: Media[]; total: number }>(`/api/media${qs.toString() ? '?' + qs : ''}`, false);
   },
-
-  get: (id: string): Promise<Media> =>
-    request(`/api/media/${encodeURIComponent(id)}`),
-
-  featured: (): Promise<{ items: any[] }> =>
-    request('/api/featured'),
+  get:      (id: string) => get<Media>(`/api/media/${encodeURIComponent(id)}`, false),
+  featured: () => get<{ items: unknown[] }>('/api/featured', false),
 };
-
-// ─── Drive API ────────────────────────────────────────────────────────────────
 
 export const driveApi = {
-  list: (): Promise<{ drives: Drive[] }> =>
-    request('/api/drives'),
+  list: () => get<{ drives: Drive[] }>('/api/drives', false),
 };
-
-// ─── Jobs API ─────────────────────────────────────────────────────────────────
 
 export const jobsApi = {
-  list: (all = false): Promise<{ jobs: Job[] }> =>
-    request(`/api/jobs${all ? '?all=true' : ''}`),
-
-  get: (id: string): Promise<Job> =>
-    request(`/api/jobs/${encodeURIComponent(id)}`),
-
-  create: (
-    mediaId: string,
-    driveId: string | null,
-    deliveryType?: 'usb' | 'mobile',
-    paymentMode?: 'manual' | 'online'
-  ): Promise<Job> => {
-    const body: Record<string, unknown> = {
-      media_id: mediaId,
-      drive_id: driveId ?? undefined,
-      delivery_type: deliveryType ?? 'usb',
-      payment_mode: paymentMode ?? 'manual',
-    };
-    return request('/api/jobs', {
-      method: 'POST',
-      body:   JSON.stringify(body),
-    });
-  },
-
-  cancel: (id: string): Promise<{ status: string; job_id: string }> =>
-    request(`/api/jobs/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+  list:   (all = false) => get<{ jobs: Job[] }>(`/api/jobs${all ? '?all=true' : ''}`, false),
+  get:    (id: string)  => get<Job>(`/api/jobs/${encodeURIComponent(id)}`, false),
+  create: (mediaId: string, driveId: string | null, deliveryType?: string, paymentMode?: string) =>
+    post<Job>('/api/jobs', {
+      media_id: mediaId, drive_id: driveId ?? undefined,
+      delivery_type: deliveryType ?? 'usb', payment_mode: paymentMode ?? 'manual',
+    }, false),
+  cancel: (id: string) => req<{ status: string; job_id: string }>('DELETE', `/api/jobs/${encodeURIComponent(id)}`, undefined, false),
 };
 
-// ─── Public Payment (Stripe checkout for customer) ─────────────────────────────
-
-export const paymentApi = {
-  createSession: (
-    jobId: string,
-    amountCents: number,
-    currency = 'USD',
-    description = 'SmartCopy Media'
-  ): Promise<{ checkout_url: string; session_id: string }> =>
-    request('/api/payment/create-session', {
-      method: 'POST',
-      body:   JSON.stringify({
-        job_id:       jobId,
-        amount_cents: amountCents,
-        currency,
-        description,
-      }),
-    }),
-};
-
-// ─── Auth API ─────────────────────────────────────────────────────────────────
-
+/* ── Auth API ───────────────────────────────────────────────── */
 export const authApi = {
-  login: (username: string, password: string): Promise<{ access_token: string; expires_in: number }> =>
-    request('/api/admin/login', {
-      method: 'POST',
-      body:   JSON.stringify({ username, password }),
-    }),
-
-  changePassword: (oldPassword: string, newPassword: string): Promise<{ status: string }> =>
-    request('/api/admin/change-password', {
-      method: 'POST',
-      body:   JSON.stringify({ old_password: oldPassword, new_password: newPassword }),
-    }, true),
+  login: (username: string, password: string) =>
+    post<{ access_token: string; expires_in?: number }>('/api/admin/login', { username, password }, false),
+  changePassword: (oldPassword: string, newPassword: string) =>
+    post<{ status: string }>('/api/admin/change-password', { old_password: oldPassword, new_password: newPassword }),
 };
 
-// ─── Admin API ────────────────────────────────────────────────────────────────
-
+/* ── Admin API ──────────────────────────────────────────────── */
 export const adminApi = {
-  dashboard: (): Promise<DashboardStats> =>
-    request('/api/admin/dashboard', {}, true),
+  /* Auth */
+  login: (username: string, password: string) => authApi.login(username, password),
 
-  queue: (): Promise<{ jobs: Job[]; active_count: number }> =>
-    request('/api/admin/queue', {}, true),
+  /* Dashboard */
+  dashboard:  () => get<DashboardSnapshot>('/api/dashboard/overview'),
+  stats:      () => get<DashboardStats>('/api/dashboard/overview'),
+  throughput: (minutes = 30) =>
+    get<{ series: { minute: string; bytes: number }[] }>(`/api/dashboard/throughput?minutes=${minutes}`),
 
-  sales: (date?: string): Promise<{ sales: Sale[]; total: number }> =>
-    request(`/api/admin/sales${date ? `?date=${date}` : ''}`, {}, true),
+  /* Jobs */
+  jobs:     (status?: string) => get<{ jobs: Job[] }>(`/api/admin/jobs${status ? `?status=${status}` : ''}`),
+  queue:    ()                => get<{ jobs: Job[] }>('/api/admin/jobs'),
+  approveJob: (id: string, opts?: { delivery_type?: string; payment_mode?: string; priority?: number }) =>
+    post<void>(`/api/admin/jobs/${id}/approve`, opts ?? {}),
+  denyJob:    (id: string) => post<void>(`/api/admin/jobs/${id}/cancel`, {}),
+  cancelJob:  (id: string) => post<{ status: string }>(`/api/admin/jobs/${encodeURIComponent(id)}/cancel`, {}),
+  confirmPayment: (id: string, ref?: string) =>
+    post<void>(`/api/admin/jobs/${id}/confirm-payment`, { payment_ref: ref }),
+  setJobPriority: (id: string, priority: number) =>
+    post<void>(`/api/admin/jobs/${id}/priority`, { priority }),
 
-  confirmPayment: (jobId: string, txRef?: string): Promise<{ status: string; price_charged: number }> =>
-    request('/api/admin/payment/confirm', {
-      method: 'POST',
-      body:   JSON.stringify({ job_id: jobId, tx_ref: txRef || '' }),
-    }, true),
+  /* Agents */
+  agents:       () => get<{ agents: Agent[]; online_count?: number }>('/api/admin/agents'),
+  approveAgents: (agentIds: string[], status: 'approved' | 'denied') =>
+    post<unknown>('/api/agent/approve', { agent_ids: agentIds, status }),
+  setMasterAgent: (agentId: string | null) =>
+    post<unknown>('/api/agent/set-master', { agent_id: agentId }),
 
-  reports: (days = 30): Promise<{ reports: DailyReport[] }> =>
-    request(`/api/admin/reports/daily?days=${days}`, {}, true),
+  /* Media */
+  adminMedia:         () => get<{ media: Media[]; total: number }>('/api/admin/media'),
+  scan:               () => post<{ status: string; files_found: number }>('/api/admin/media/scan', {}),
+  mediaRescan:        () => post<void>('/api/admin/media/scan', {}),
+  updateMediaCopyable: (mediaId: string, isCopyable: boolean) =>
+    patch<{ status: string }>(`/api/admin/media/${encodeURIComponent(mediaId)}/copyable`, { is_copyable: isCopyable }),
 
-  pricing: (): Promise<{ tiers: PricingTier[] }> =>
-    request('/api/admin/pricing', {}, true),
+  /* Pricing */
+  pricing:       () => get<{ tiers: PricingTier[] }>('/api/admin/pricing'),
+  updatePricing: (tiers: Omit<PricingTier, 'id'>[]) =>
+    put<{ status: string }>('/api/admin/pricing', { tiers }),
 
-  updatePricing: (tiers: Omit<PricingTier, 'id'>[]): Promise<{ status: string }> =>
-    request('/api/admin/pricing', {
-      method: 'PUT',
-      body:   JSON.stringify({ tiers }),
-    }, true),
+  /* Sales & Reports */
+  sales:   (date?: string) => get<{ sales: Sale[] }>(`/api/admin/sales${date ? `?date=${date}` : ''}`),
+  reports: (days = 30)     => get<{ reports: DailyReport[] }>(`/api/admin/reports/daily?days=${days}`),
 
-  adminMedia: (): Promise<{ media: Media[]; total: number }> =>
-    request('/api/admin/media', {}, true),
+  /* Settings */
+  settings:      () => get<{ settings: Settings | Record<string, string> }>('/api/admin/settings'),
+  getSettings:   () => get<Record<string, unknown>>('/api/admin/settings'),
+  updateSetting: (key: string, value: string) => put<void>('/api/admin/settings', { key, value }),
+  updateSettings: (data: Record<string, unknown>) => put<{ status: string }>('/api/admin/settings', data),
 
-  scan: (): Promise<{ status: string; files_found: number }> =>
-    request('/api/admin/media/scan', { method: 'POST' }, true),
+  /* QR */
+  qr: () => get<{ resolved_base_url: string; qr_image_base64: string; ip_changed?: boolean; current_ip?: string }>('/api/admin/qr'),
 
-  cancelJob: (jobId: string): Promise<{ status: string }> =>
-    request(`/api/admin/jobs/${encodeURIComponent(jobId)}/cancel`, { method: 'POST' }, true),
-
-  denyJob: (jobId: string): Promise<{ status: string }> =>
-    request(`/api/admin/jobs/${encodeURIComponent(jobId)}/deny`, { method: 'POST' }, true),
-
-  setJobPriority: (jobId: string, priority: number): Promise<{ status: string; job_id: string; priority: number }> =>
-    request(`/api/admin/jobs/${encodeURIComponent(jobId)}/priority`, {
-      method: 'POST',
-      body:   JSON.stringify({ priority }),
-    }, true),
-
-  agents: (): Promise<{ agents: Agent[]; online_count: number }> =>
-    request('/api/admin/agents', {}, true),
-
-  settings: (): Promise<{ settings: Record<string, string> }> =>
-    request('/api/admin/settings', {}, true),
-
-  updateSetting: (key: string, value: string): Promise<{ status: string }> =>
-    request('/api/admin/settings', {
-      method: 'PUT',
-      body:   JSON.stringify({ key, value }),
-    }, true),
-
-  updateMediaCopyable: (mediaId: string, isCopyable: boolean): Promise<{ status: string }> =>
-    request(`/api/admin/media/${encodeURIComponent(mediaId)}/copyable`, {
-      method: 'PATCH',
-      body:   JSON.stringify({ is_copyable: isCopyable }),
-    }, true),
-
-  qr: (): Promise<{ resolved_base_url: string; qr_image_base64: string; ip_changed?: boolean; current_ip?: string }> =>
-    request('/api/admin/qr', {}, true),
-
-  license: (): Promise<any> =>
-    request('/api/admin/license', {}, true),
-
-  uploadLicense: (key: string): Promise<{ status: string }> =>
-    request('/api/admin/license', {
-      method: 'POST',
-      body:   JSON.stringify({ license_key: key }),
-    }, true),
-
-  approveAgents: (agentIds: string[], status: 'approved' | 'denied'): Promise<any> =>
-    request('/api/agent/approve', {
-      method: 'POST',
-      body: JSON.stringify({ agent_ids: agentIds, status }),
-    }, true),
-
-  setMasterAgent: (agentId: string | null): Promise<any> =>
-    request('/api/agent/set-master', {
-      method: 'POST',
-      body: JSON.stringify({ agent_id: agentId }),
-    }, true),
+  /* License */
+  license:       () => get<unknown>('/api/admin/license'),
+  uploadLicense: (key: string) => post<{ status: string }>('/api/admin/license', { license_key: key }),
 };
 
-// ─── WebSocket Manager ────────────────────────────────────────────────────────
-
+/* ── WebSocket Manager ──────────────────────────────────────── */
 type WSListener = (event: WSEvent) => void;
 
 class SmartCopyWebSocket {
-  private ws:              WebSocket | null = null;
-  private listeners:       Map<WSEventType | '*', Set<WSListener>> = new Map();
-  private reconnectDelay:  number = 1000;
-  private pingInterval:    ReturnType<typeof setInterval> | null = null;
-  private connected:       boolean = false;
+  private ws:             WebSocket | null = null;
+  private listeners:      Map<WSEventType | '*', Set<WSListener>> = new Map();
+  private reconnectDelay: number = 1000;
+  private pingInterval:   ReturnType<typeof setInterval> | null = null;
+  private connected:      boolean = false;
 
   connect(): void {
     if (this.ws && this.ws.readyState === WebSocket.OPEN) return;
-
     const proto = location.protocol === 'https:' ? 'wss' : 'ws';
     this.ws = new WebSocket(`${proto}://${location.host}/ws/jobs`);
 
@@ -259,19 +180,13 @@ class SmartCopyWebSocket {
       this.connected = true;
       this.reconnectDelay = 1000;
       this.emit({ event: 'state.init', payload: {} } as WSEvent);
-
       this.pingInterval = setInterval(() => {
-        if (this.ws?.readyState === WebSocket.OPEN) {
-          this.ws.send('ping');
-        }
+        if (this.ws?.readyState === WebSocket.OPEN) this.ws.send('ping');
       }, 20_000);
     };
 
     this.ws.onmessage = (e: MessageEvent) => {
-      try {
-        const event = JSON.parse(e.data as string) as WSEvent;
-        this.emit(event);
-      } catch { /* ignore malformed */ }
+      try { this.emit(JSON.parse(e.data as string) as WSEvent); } catch { /**/ }
     };
 
     this.ws.onclose = () => {
@@ -288,11 +203,8 @@ class SmartCopyWebSocket {
   }
 
   on(eventType: WSEventType | '*', listener: WSListener): () => void {
-    if (!this.listeners.has(eventType)) {
-      this.listeners.set(eventType, new Set());
-    }
+    if (!this.listeners.has(eventType)) this.listeners.set(eventType, new Set());
     this.listeners.get(eventType)!.add(listener);
-    // Return unsubscribe fn
     return () => this.listeners.get(eventType)?.delete(listener);
   }
 
@@ -302,12 +214,7 @@ class SmartCopyWebSocket {
   }
 
   get isConnected(): boolean { return this.connected; }
-
-  disconnect(): void {
-    if (this.pingInterval) clearInterval(this.pingInterval);
-    this.ws?.close();
-  }
+  disconnect(): void { if (this.pingInterval) clearInterval(this.pingInterval); this.ws?.close(); }
 }
 
-// Singleton WebSocket client — one connection for the whole app
 export const wsClient = new SmartCopyWebSocket();

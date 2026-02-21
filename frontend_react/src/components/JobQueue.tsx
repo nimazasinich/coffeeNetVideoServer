@@ -10,7 +10,7 @@ interface JobQueueProps {
 
 const StatusIcon = ({ status }: { status: string }) => {
   switch (status) {
-    case 'pending':   return <Clock     className="w-4 h-4" style={{ color: '#f5c518' }} />;
+    case 'pending':   return <Clock     className="w-4 h-4" style={{ color: 'var(--accent)' }} />;
     case 'active':    return <Loader2   className="w-4 h-4 animate-spin" style={{ color: 'var(--blue)' }} />;
     case 'completed': return <CheckCircle className="w-4 h-4" style={{ color: 'var(--green)' }} />;
     case 'failed':    return <XCircle   className="w-4 h-4" style={{ color: 'var(--red)' }} />;
@@ -28,13 +28,13 @@ function JobCard({ job, name, onCancel }: { job: Job; name: string; onCancel: ()
   const eta = estimateTimeRemaining(job.progress_bytes, job.total_bytes, job.throughput_mbps);
   const canCancel = job.status === 'pending' || job.status === 'active';
 
-  const borderColor = job.status === 'active'    ? 'rgba(74,158,255,.2)'
-                    : job.status === 'completed' ? 'rgba(62,207,142,.2)'
-                    : job.status === 'failed'    ? 'rgba(255,77,109,.2)'
+  const borderColor = job.status === 'active'    ? 'var(--blue-border)'
+                    : job.status === 'completed' ? 'var(--green-border)'
+                    : job.status === 'failed'    ? 'var(--red-border)'
                     : 'var(--border)';
 
   return (
-    <div className="fade-up rounded-xl p-3 transition-all"
+    <div className="fade-in-up rounded-xl p-3 transition-all"
          style={{ background: 'var(--bg3)', border: `1px solid ${borderColor}` }}>
 
       {/* Top row */}
@@ -75,8 +75,9 @@ function JobCard({ job, name, onCancel }: { job: Job; name: string; onCancel: ()
             <span>{formatBytes(job.progress_bytes)} / {formatBytes(job.total_bytes)}</span>
           </div>
           {eta !== null && (
-            <p className="text-xs" style={{ color: 'var(--blue)' }}>
-              ⏱ {formatDuration(eta)} باقی‌مانده
+            <p className="text-xs flex items-center gap-1" style={{ color: 'var(--blue)' }}>
+              <Clock className="w-3 h-3" />
+              {formatDuration(eta)} باقی‌مانده
             </p>
           )}
         </div>
@@ -84,14 +85,15 @@ function JobCard({ job, name, onCancel }: { job: Job; name: string; onCancel: ()
 
       {/* Completed */}
       {job.status === 'completed' && (
-        <p className="text-xs mt-1 font-medium" style={{ color: 'var(--green)' }}>
-          ✅ کپی با موفقیت انجام شد
+        <p className="text-xs mt-1 font-medium flex items-center gap-1.5" style={{ color: 'var(--green)' }}>
+          <CheckCircle className="w-3.5 h-3.5" />
+          کپی با موفقیت انجام شد
         </p>
       )}
 
       {/* Failed */}
       {job.status === 'failed' && job.error_message && (
-        <div className="mt-2 p-2 rounded-lg text-xs" style={{ background: 'rgba(255,77,109,.08)', color: 'var(--red)', border: '1px solid rgba(255,77,109,.15)' }}>
+        <div className="mt-2 p-2 rounded-lg text-xs" style={{ background: 'var(--red-muted)', color: 'var(--red)', border: '1px solid var(--red-border)' }}>
           {job.error_message}
         </div>
       )}
@@ -102,8 +104,8 @@ function JobCard({ job, name, onCancel }: { job: Job; name: string; onCancel: ()
 export function JobQueue({ jobs, mediaMap, onCancel }: JobQueueProps) {
   if (jobs.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-12 text-center fade-in">
-        <div className="text-4xl mb-3 opacity-30">🕐</div>
+      <div className="flex flex-col items-center justify-center py-12 text-center fade-in-up">
+        <Clock className="w-10 h-10 mb-3 opacity-30" />
         <p className="text-sm font-medium" style={{ color: 'var(--text2)' }}>صف خالی است</p>
         <p className="text-xs mt-1" style={{ color: 'var(--text3)' }}>پس از انتخاب فیلم و تأیید، کارها اینجا نمایش داده می‌شوند</p>
       </div>
